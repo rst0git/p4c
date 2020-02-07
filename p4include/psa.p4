@@ -296,6 +296,8 @@ struct psa_ingress_input_metadata_t {
   PSA_PacketPath_t         packet_path;
   Timestamp_t              ingress_timestamp;
   ParserError_t            parser_error;
+  bit<8>                   max_recirculations;
+  bit<8>                   max_resubmissions;
 }
 // BEGIN:Metadata_ingress_output
 struct psa_ingress_output_metadata_t {
@@ -317,6 +319,8 @@ struct psa_egress_input_metadata_t {
   EgressInstance_t         instance;       /// instance comes from the PacketReplicationEngine
   Timestamp_t              egress_timestamp;
   ParserError_t            parser_error;
+  bit<8>                   max_recirculations;
+  bit<8>                   max_resubmissions;
 }
 
 /// This struct is an 'in' parameter to the egress deparser.  It
