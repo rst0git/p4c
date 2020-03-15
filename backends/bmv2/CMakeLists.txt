@@ -19,6 +19,8 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/simple_switch/version.h.cmake"
   "${CMAKE_CURRENT_BINARY_DIR}/simple_switch/version.h" @ONLY)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/psa_switch/version.h.cmake"
   "${CMAKE_CURRENT_BINARY_DIR}/psa_switch/version.h" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/mtpsa_switch/version.h.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/mtpsa_switch/version.h" @ONLY)
 
 # sources for backend executable
 set (BMV2_SIMPLE_SWITCH_SRCS
@@ -40,6 +42,16 @@ set (BMV2_PSA_SWITCH_SRCS
     psa_switch/options.h
     )
 add_cpplint_files (${CMAKE_CURRENT_SOURCE_DIR} "${BMV2_PSA_SWITCH_SRCS}")
+
+set (BMV2_MTPSA_SWITCH_SRCS
+    mtpsa_switch/main.cpp
+    mtpsa_switch/midend.cpp
+    mtpsa_switch/midend.h
+    mtpsa_switch/mtPsaSwitch.cpp
+    mtpsa_switch/mtPsaSwitch.h
+    mtpsa_switch/options.h
+    )
+add_cpplint_files (${CMAKE_CURRENT_SOURCE_DIR} "${BMV2_MTPSA_SWITCH_SRCS}")
 
 set (BMV2_BACKEND_COMMON_SRCS
   common/JsonObjects.cpp
@@ -98,6 +110,11 @@ build_unified(BMV2_PSA_SWITCH_SRCS)
 add_executable(p4c-bm2-psa ${BMV2_PSA_SWITCH_SRCS})
 target_link_libraries (p4c-bm2-psa bmv2backend ${P4C_LIBRARIES} ${P4C_LIB_DEPS})
 install(TARGETS p4c-bm2-psa RUNTIME DESTINATION ${P4C_RUNTIME_OUTPUT_DIRECTORY})
+
+build_unified(BMV2_MTPSA_SWITCH_SRCS)
+add_executable(p4c-bm2-mtpsa ${BMV2_MTPSA_SWITCH_SRCS})
+target_link_libraries (p4c-bm2-mtpsa bmv2backend ${P4C_LIBRARIES} ${P4C_LIB_DEPS})
+install(TARGETS p4c-bm2-mtpsa RUNTIME DESTINATION ${P4C_RUNTIME_OUTPUT_DIRECTORY})
 
 # hack to get around the fact that the test scripts expect the backend
 # binary to be in the top level directory. This should go away when we
