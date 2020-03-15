@@ -87,6 +87,8 @@ class CompilerOptions : public Util::Options {
     // if true, skip backend passes whose names are contained in passesToExcludeBackend vector
     bool excludeBackendPasses = false;
 
+    bool userProgram = false;
+
     // Dump a JSON representation of the IR in the file
     cstring dumpJsonFile = nullptr;
 

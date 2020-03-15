@@ -1,29 +1,11 @@
-/*
-Copyright 2013-present Barefoot Networks, Inc.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 #include "frontends/common/model.h"
-#include "frontends/p4/cloner.h"
-#include "psaSwitch.h"
+#include "mtPsaSwitch.h"
 
 namespace BMV2 {
 
-void PsaProgramStructure::create(ConversionContext* ctxt) {
+void MtPsaProgramStructure::create(ConversionContext* ctxt) {
     createTypes(ctxt);
     createHeaders(ctxt);
-    createScalars(ctxt);
     createExterns();
     createParsers(ctxt);
     createActions(ctxt);
@@ -32,7 +14,7 @@ void PsaProgramStructure::create(ConversionContext* ctxt) {
     createGlobals();
 }
 
-void PsaProgramStructure::createStructLike(ConversionContext* ctxt, const IR::Type_StructLike* st) {
+void MtPsaProgramStructure::createStructLike(ConversionContext* ctxt, const IR::Type_StructLike* st) {
     CHECK_NULL(st);
     cstring name = st->controlPlaneName();
     unsigned max_length = 0;  // for variable-sized headers
@@ -95,7 +77,7 @@ void PsaProgramStructure::createStructLike(ConversionContext* ctxt, const IR::Ty
     ctxt->json->add_header_type(name, fields, max_length_bytes);
 }
 
-void PsaProgramStructure::createTypes(ConversionContext* ctxt) {
+void MtPsaProgramStructure::createTypes(ConversionContext* ctxt) {
     for (auto kv : header_types)
         createStructLike(ctxt, kv.second);
     for (auto kv : metadata_types)
@@ -118,27 +100,7 @@ void PsaProgramStructure::createTypes(ConversionContext* ctxt) {
     // add enums to json
 }
 
-void PsaProgramStructure::createScalars(ConversionContext* ctxt) {
-    auto name = scalars.begin()->first;
-    ctxt->json->add_header("scalars_t", name);
-    ctxt->json->add_header_type("scalars_t");
-
-    for (auto kv : scalars) {
-        LOG5("Adding a scalar field " << kv.second << " to generated json");
-        auto field = new Util::JsonArray();
-        auto ftype = typeMap->getType(kv.second, true);
-        if (auto type = ftype->to<IR::Type_Bits>()) {
-            field->append(kv.second->name);
-            field->append(type->size);
-            field->append(type->isSigned);
-        } else {
-            BUG_CHECK(kv.second, "%1 is not of Type_Bits");
-        }
-        ctxt->json->add_header_field("scalars_t", field);
-    }
-}
-
-void PsaProgramStructure::createHeaders(ConversionContext* ctxt) {
+void MtPsaProgramStructure::createHeaders(ConversionContext* ctxt) {
     for (auto kv : headers) {
         auto type = kv.second->type->to<IR::Type_StructLike>();
         ctxt->json->add_header(type->controlPlaneName(), kv.second->name);
@@ -169,7 +131,13 @@ void PsaProgramStructure::createHeaders(ConversionContext* ctxt) {
     }
 }
 
-void PsaProgramStructure::createParsers(ConversionContext* ctxt) {
+void MtPsaProgramStructure::createParsers(ConversionContext* ctxt) {
+    if (userProgram) {
+        auto cvt = new ParserConverter(ctxt, "parser");
+        auto ingress = parsers.at("ingress");
+        ingress->apply(*cvt);
+        return;
+    }
     {
         auto cvt = new ParserConverter(ctxt, "ingress_parser");
         auto ingress = parsers.at("ingress");
@@ -177,12 +145,12 @@ void PsaProgramStructure::createParsers(ConversionContext* ctxt) {
     }
     {
         auto cvt = new ParserConverter(ctxt, "egress_parser");
-        auto ingress = parsers.at("egress");
-        ingress->apply(*cvt);
+        auto egress = parsers.at("egress");
+        egress->apply(*cvt);
     }
 }
 
-void PsaProgramStructure::createExterns() {
+void MtPsaProgramStructure::createExterns() {
     /* TODO */
     // add parse_vsets to json
     // add meter_arrays to json
@@ -194,7 +162,7 @@ void PsaProgramStructure::createExterns() {
     // add extern_instances to json
 }
 
-void PsaProgramStructure::createActions(ConversionContext* ctxt) {
+void MtPsaProgramStructure::createActions(ConversionContext* ctxt) {
     auto cvt = new ActionConverter(ctxt, true);
     for (auto it : actions) {
         auto action = it.first;
@@ -202,17 +170,25 @@ void PsaProgramStructure::createActions(ConversionContext* ctxt) {
     }
 }
 
-void PsaProgramStructure::createControls(ConversionContext* ctxt) {
+void MtPsaProgramStructure::createControls(ConversionContext* ctxt) {
     auto cvt = new BMV2::ControlConverter<Standard::Arch::PSA>(ctxt, "ingress", true);
     auto ingress = pipelines.at("ingress");
     ingress->apply(*cvt);
 
-    cvt = new BMV2::ControlConverter<Standard::Arch::PSA>(ctxt, "egress", true);
-    auto egress = pipelines.at("egress");
-    egress->apply(*cvt);
+    if (!userProgram) {
+      cvt = new BMV2::ControlConverter<Standard::Arch::PSA>(ctxt, "egress", true);
+      auto egress = pipelines.at("egress");
+      egress->apply(*cvt);
+    }
 }
 
-void PsaProgramStructure::createDeparsers(ConversionContext* ctxt) {
+void MtPsaProgramStructure::createDeparsers(ConversionContext* ctxt) {
+    if (userProgram) {
+        auto cvt = new DeparserConverter(ctxt, "deparser");
+        auto ingress = deparsers.at("ingress");
+        ingress->apply(*cvt);
+        return;
+    }
     {
         auto cvt = new DeparserConverter(ctxt, "ingress_deparser");
         auto ingress = deparsers.at("ingress");
@@ -225,14 +201,14 @@ void PsaProgramStructure::createDeparsers(ConversionContext* ctxt) {
     }
 }
 
-void PsaProgramStructure::createGlobals() {
+void MtPsaProgramStructure::createGlobals() {
     /* TODO */
     // for (auto e : globals) {
     //     convertExternInstances(e->node->to<IR::Declaration>(), e->to<IR::ExternBlock>());
     // }
 }
 
-bool ParsePsaArchitecture::preorder(const IR::ToplevelBlock* block) {
+bool ParseMtPsaArchitecture::preorder(const IR::ToplevelBlock* block) {
     /// Blocks are not in IR tree, use a custom visitor to traverse
     for (auto it : block->constantValue) {
         if (it.second->is<IR::Block>())
@@ -241,39 +217,48 @@ bool ParsePsaArchitecture::preorder(const IR::ToplevelBlock* block) {
     return false;
 }
 
-bool ParsePsaArchitecture::preorder(const IR::ExternBlock* block) {
+bool ParseMtPsaArchitecture::preorder(const IR::ExternBlock* block) {
     if (block->node->is<IR::Declaration>())
         structure->globals.push_back(block);
     return false;
 }
 
-bool ParsePsaArchitecture::preorder(const IR::PackageBlock* block) {
-    auto pkg = block->getParameterValue("ingress");
-    if (auto ingress = pkg->to<IR::PackageBlock>()) {
-        auto parser = ingress->getParameterValue("ip")->to<IR::ParserBlock>();
-        auto pipeline = ingress->getParameterValue("ig")->to<IR::ControlBlock>();
-        auto deparser = ingress->getParameterValue("id")->to<IR::ControlBlock>();
+bool ParseMtPsaArchitecture::preorder(const IR::PackageBlock* block) {
+    if (structure->userProgram) {
+        auto parser = block->getParameterValue("pr")->to<IR::ParserBlock>();
+        auto pipeline = block->getParameterValue("pi")->to<IR::ControlBlock>();
+        auto deparser = block->getParameterValue("dp")->to<IR::ControlBlock>();
+
         structure->block_type.emplace(parser->container, std::make_pair(INGRESS, PARSER));
         structure->block_type.emplace(pipeline->container, std::make_pair(INGRESS, PIPELINE));
+        structure->non_pipeline_controls.emplace(deparser->container->name);
         structure->block_type.emplace(deparser->container, std::make_pair(INGRESS, DEPARSER));
-        structure->pipeline_controls.emplace(pipeline->container->name);
-        structure->non_pipeline_controls.emplace(deparser->container->name);
-    }
-    pkg = block->getParameterValue("egress");
-    if (auto egress = pkg->to<IR::PackageBlock>()) {
-        auto parser = egress->getParameterValue("ep")->to<IR::ParserBlock>();
-        auto pipeline = egress->getParameterValue("eg")->to<IR::ControlBlock>();
-        auto deparser = egress->getParameterValue("ed")->to<IR::ControlBlock>();
-        structure->block_type.emplace(parser->container, std::make_pair(EGRESS, PARSER));
+    } else {
+        auto pkg = block->getParameterValue("ingress");
+        if (auto ingress = pkg->to<IR::PackageBlock>()) {
+            auto parser = ingress->getParameterValue("ip")->to<IR::ParserBlock>();
+            auto pipeline = ingress->getParameterValue("ig")->to<IR::ControlBlock>();
+            auto deparser = ingress->getParameterValue("id")->to<IR::ControlBlock>();
+            structure->block_type.emplace(parser->container, std::make_pair(INGRESS, PARSER));
+            structure->block_type.emplace(pipeline->container, std::make_pair(INGRESS, PIPELINE));
+            structure->block_type.emplace(deparser->container, std::make_pair(INGRESS, DEPARSER));
+            structure->pipeline_controls.emplace(pipeline->container->name);
+            structure->non_pipeline_controls.emplace(deparser->container->name);
+        }
+
+        auto egress_parser = block->getParameterValue("ep")->to<IR::ParserBlock>();
+        auto pipeline = block->getParameterValue("eg")->to<IR::ControlBlock>();
+        auto egress_deparser = block->getParameterValue("ed")->to<IR::ControlBlock>();
+        structure->block_type.emplace(egress_parser->container, std::make_pair(EGRESS, PARSER));
         structure->block_type.emplace(pipeline->container, std::make_pair(EGRESS, PIPELINE));
-        structure->block_type.emplace(deparser->container, std::make_pair(EGRESS, DEPARSER));
+        structure->block_type.emplace(egress_deparser->container, std::make_pair(EGRESS, DEPARSER));
         structure->pipeline_controls.emplace(pipeline->container->name);
-        structure->non_pipeline_controls.emplace(deparser->container->name);
+        structure->non_pipeline_controls.emplace(egress_deparser->container->name);
     }
     return false;
 }
 
-void InspectPsaProgram::postorder(const IR::Declaration_Instance* di) {
+void InspectMtPsaProgram::postorder(const IR::Declaration_Instance* di) {
     if (!pinfo->resourceMap.count(di))
         return;
     auto blk = pinfo->resourceMap.at(di);
@@ -284,7 +269,7 @@ void InspectPsaProgram::postorder(const IR::Declaration_Instance* di) {
     }
 }
 
-bool InspectPsaProgram::isHeaders(const IR::Type_StructLike* st) {
+bool InspectMtPsaProgram::isHeaders(const IR::Type_StructLike* st) {
     bool result = false;
     for (auto f : st->fields) {
         if (f->type->is<IR::Type_Header>() || f->type->is<IR::Type_Stack>()) {
@@ -294,7 +279,7 @@ bool InspectPsaProgram::isHeaders(const IR::Type_StructLike* st) {
     return result;
 }
 
-void InspectPsaProgram::addHeaderType(const IR::Type_StructLike *st) {
+void InspectMtPsaProgram::addHeaderType(const IR::Type_StructLike *st) {
     LOG5("In addHeaderType with struct " << st->toString());
     if (st->is<IR::Type_HeaderUnion>()) {
       LOG5("Struct is Type_HeaderUnion");
@@ -315,7 +300,7 @@ void InspectPsaProgram::addHeaderType(const IR::Type_StructLike *st) {
     }
 }
 
-void InspectPsaProgram::addHeaderInstance(const IR::Type_StructLike *st, cstring name) {
+void InspectMtPsaProgram::addHeaderInstance(const IR::Type_StructLike *st, cstring name) {
     auto inst = new IR::Declaration_Variable(name, st);
     if (st->is<IR::Type_Header>())
         pinfo->headers.emplace(name, inst);
@@ -325,7 +310,7 @@ void InspectPsaProgram::addHeaderInstance(const IR::Type_StructLike *st, cstring
         pinfo->header_unions.emplace(name, inst);
 }
 
-void InspectPsaProgram::addTypesAndInstances(const IR::Type_StructLike* type, bool isHeader) {
+void InspectMtPsaProgram::addTypesAndInstances(const IR::Type_StructLike* type, bool isHeader) {
     LOG5("Adding type " << type->toString() << " and isHeader " << isHeader);
     for (auto f : type->fields) {
         LOG5("Iterating through field " << f->toString());
@@ -412,21 +397,8 @@ void InspectPsaProgram::addTypesAndInstances(const IR::Type_StructLike* type, bo
     }
 }
 
-
-bool InspectPsaProgram::preorder(const IR::Declaration_Variable* dv) {
-        auto ft = typeMap->getType(dv->getNode(), true);
-        cstring scalarsName = refMap->newName("scalars");
-
-        if (ft->is<IR::Type_Bits>()) {
-            LOG5("Adding " << dv << " into scalars map");
-            pinfo->scalars.emplace(scalarsName, dv);
-        }
-
-        return false;
-}
-
 // This visitor only visits the parameter in the statement from architecture.
-bool InspectPsaProgram::preorder(const IR::Parameter* param) {
+bool InspectMtPsaProgram::preorder(const IR::Parameter* param) {
     auto ft = typeMap->getType(param->getNode(), true);
     LOG3("add param " << ft);
     // only convert parameters that are IR::Type_StructLike
@@ -441,7 +413,7 @@ bool InspectPsaProgram::preorder(const IR::Parameter* param) {
       LOG5("Parameter is visited, returning");
       return false;
     }
-    if (PsaSwitchExpressionConverter::isStandardMetadata(ptName)) {
+    if (MtPsaSwitchExpressionConverter::isStandardMetadata(ptName)) {
       LOG5("Parameter is psa standard metadata");
       addHeaderType(st);
       // remove _t from type name
@@ -453,7 +425,7 @@ bool InspectPsaProgram::preorder(const IR::Parameter* param) {
     return false;
 }
 
-void InspectPsaProgram::postorder(const IR::P4Parser* p) {
+void InspectMtPsaProgram::postorder(const IR::P4Parser* p) {
     if (pinfo->block_type.count(p)) {
         auto info = pinfo->block_type.at(p);
         if (info.first == INGRESS && info.second == PARSER)
@@ -463,7 +435,7 @@ void InspectPsaProgram::postorder(const IR::P4Parser* p) {
     }
 }
 
-void InspectPsaProgram::postorder(const IR::P4Control *c) {
+void InspectMtPsaProgram::postorder(const IR::P4Control *c) {
     if (pinfo->block_type.count(c)) {
         auto info = pinfo->block_type.at(c);
         if (info.first == INGRESS && info.second == PIPELINE)
@@ -477,17 +449,19 @@ void InspectPsaProgram::postorder(const IR::P4Control *c) {
     }
 }
 
-void PsaSwitchBackend::convert(const IR::ToplevelBlock* tlb) {
+void MtPsaSwitchBackend::convert(const IR::ToplevelBlock* tlb) {
     CHECK_NULL(tlb);
-    PsaProgramStructure structure(refMap, typeMap);
+    MtPsaProgramStructure structure(refMap, typeMap);
+    structure.userProgram = options.userProgram;
 
-    auto parsePsaArch = new ParsePsaArchitecture(&structure);
+    auto parsePsaArch = new ParseMtPsaArchitecture(&structure);
     auto main = tlb->getMain();
     if (!main) return;
 
-    if (main->type->name != "PSA_Switch")
-        ::warning(ErrorType::WARN_INVALID, "%1%: the main package should be called PSA_Switch"
-                  "; are you using the wrong architecture?", main->type->name);
+    auto switchName = options.userProgram ? "MTPSA_User_Switch" : "MTPSA_Switch";
+    if (main->type->name != switchName)
+        ::warning(ErrorType::WARN_INVALID, "%1%: the main package should be called %2%"
+                  "; are you using the wrong architecture?", main->type->name, switchName);
 
     main->apply(*parsePsaArch);
 
@@ -497,25 +471,20 @@ void PsaSwitchBackend::convert(const IR::ToplevelBlock* tlb) {
         /* TODO */
         // new RenameUserMetadata(refMap, userMetaType, userMetaName),
         new P4::ClearTypeMap(typeMap),  // because the user metadata type has changed
-        new P4::SynthesizeActions(refMap, typeMap,
-                new SkipControls(&structure.non_pipeline_controls)),
+        new P4::SynthesizeActions(refMap, typeMap, new SkipControls(&structure.non_pipeline_controls)),
         new P4::MoveActionsToTables(refMap, typeMap),
         new P4::TypeChecking(refMap, typeMap),
         new P4::SimplifyControlFlow(refMap, typeMap),
         new LowerExpressions(typeMap),
         new P4::ConstantFolding(refMap, typeMap, false),
         new P4::TypeChecking(refMap, typeMap),
-        new RemoveComplexExpressions(refMap, typeMap,
-                new ProcessControls(&structure.pipeline_controls)),
+        new RemoveComplexExpressions(refMap, typeMap, new ProcessControls(&structure.pipeline_controls)),
         new P4::SimplifyControlFlow(refMap, typeMap),
         new P4::RemoveAllUnusedDeclarations(refMap),
-        // Converts the DAG into a TREE (at least for expressions)
-        // This is important later for conversion to JSON.
-        new P4::ClonePathExpressions(),
-        new P4::ClearTypeMap(typeMap),
         evaluator,
         new VisitFunctor([this, evaluator, structure]() {
-            toplevel = evaluator->getToplevelBlock(); }),
+            toplevel = evaluator->getToplevelBlock();
+        }),
     };
     auto hook = options.getDebugHook();
     simplify.addDebugHook(hook);
@@ -525,14 +494,15 @@ void PsaSwitchBackend::convert(const IR::ToplevelBlock* tlb) {
     toplevel->apply(*new BMV2::BuildResourceMap(&structure.resourceMap));
 
     main = toplevel->getMain();
-    if (!main) return;  // no main
+    if (!main)
+      return;  // no main
     main->apply(*parsePsaArch);
     program = toplevel->getProgram();
 
     PassManager toJson = {
         new DiscoverStructure(&structure),
-        new InspectPsaProgram(refMap, typeMap, &structure),
-        new ConvertPsaToJson(refMap, typeMap, toplevel, json, &structure)
+        new InspectMtPsaProgram(refMap, typeMap, &structure),
+        new ConvertMtPsaToJson(refMap, typeMap, toplevel, json, &structure)
     };
     for (const auto &pEnum : *enumMap) {
       auto name = pEnum.first->getName();
@@ -578,30 +548,7 @@ Util::IJson* ExternConverter_InternetChecksum::convertExternObject(
     UNUSED ConversionContext* ctxt, UNUSED const P4::ExternMethod* em,
     UNUSED const IR::MethodCallExpression* mc, UNUSED const IR::StatOrDecl *s,
     UNUSED const bool& emitExterns) {
-    long unsigned int nargs = 0; // the "clear" method has no arguments
-    if (em->method->name == "add")
-        nargs = 1;
-
-    if (mc->arguments->size() != nargs) {
-        modelError("Expected 1 argument for %1%", mc);
-        return nullptr;
-    }
-    auto primitive = mkPrimitive(em->originalExternType->name + "_" + em->method->name);
-    auto parameters = mkParameters(primitive);
-    primitive->emplace_non_null("source_info", s->sourceInfoJsonObj());
-    auto ctr = new Util::JsonObject();
-    ctr->emplace("type", "extern");
-    ctr->emplace("value", em->object->controlPlaneName());
-    parameters->append(ctr);
-    if (em->method->name == "add") {
-        auto calculation = new Util::JsonObject();
-        auto calcName = createCalculation(ctxt, "csum16", mc->arguments->at(0)->expression, ctxt->json->calculations,
-                                        false, s);
-        calculation->emplace("type", "calculation");
-        calculation->emplace("value", calcName);
-        parameters->append(calculation);
-    }
-
+    auto primitive = mkPrimitive("InternetChecksum");
     return primitive;
 }
 
@@ -642,24 +589,21 @@ Util::IJson* ExternConverter_Meter::convertExternObject(
     UNUSED ConversionContext* ctxt, UNUSED const P4::ExternMethod* em,
     UNUSED const IR::MethodCallExpression* mc, UNUSED const IR::StatOrDecl *s,
     UNUSED const bool& emitExterns) {
-    if (mc->arguments->size() != 1 && mc->arguments->size() != 2) {
+    if (mc->arguments->size() != 2) {
         modelError("Expected 2 arguments for %1%", mc);
         return nullptr;
     }
-    auto primitive = mkPrimitive("_" + em->originalExternType->name +
-                                 "_" + em->method->name);
+    auto primitive = mkPrimitive("execute_meter");
     auto parameters = mkParameters(primitive);
     primitive->emplace_non_null("source_info", s->sourceInfoJsonObj());
     auto mtr = new Util::JsonObject();
-    mtr->emplace("type", "extern");
+    mtr->emplace("type", "meter_array");
     mtr->emplace("value", em->object->controlPlaneName());
     parameters->append(mtr);
-    if (mc->arguments->size() == 2) {
-        auto result = ctxt->conv->convert(mc->arguments->at(1)->expression);
-        parameters->append(result);
-    }
     auto index = ctxt->conv->convert(mc->arguments->at(0)->expression);
     parameters->append(index);
+    auto result = ctxt->conv->convert(mc->arguments->at(1)->expression);
+    parameters->append(result);
     return primitive;
 }
 
@@ -681,14 +625,8 @@ Util::IJson* ExternConverter_Register::convertExternObject(
     UNUSED ConversionContext* ctxt, UNUSED const P4::ExternMethod* em,
     UNUSED const IR::MethodCallExpression* mc, UNUSED const IR::StatOrDecl *s,
     UNUSED const bool& emitExterns) {
-    if (em->method->name != "write" && em->method->name != "read") {
-        modelError("Unsupported register method %1%", mc);
-        return nullptr;
-    } else if (em->method->name == "write" && mc->arguments->size() != 2) {
+    if (mc->arguments->size() != 2) {
         modelError("Expected 2 arguments for %1%", mc);
-        return nullptr;
-    } else if (em->method->name == "read" && mc->arguments->size() != 2) {
-        modelError("p4c-psa internally requires 2 arguments for %1%", mc);
         return nullptr;
     }
     auto reg = new Util::JsonObject();
@@ -699,11 +637,12 @@ Util::IJson* ExternConverter_Register::convertExternObject(
         auto primitive = mkPrimitive("register_read");
         auto parameters = mkParameters(primitive);
         primitive->emplace_non_null("source_info", s->sourceInfoJsonObj());
-        auto dest = ctxt->conv->convert(mc->arguments->at(0)->expression);
-        parameters->append(dest);
+        /* TODO */
+        // auto dest = ctxt->conv->convert(mc->arguments->at(0)->expression);
+        // parameters->append(dest);
         parameters->append(reg);
-        auto index = ctxt->conv->convert(mc->arguments->at(1)->expression);
-        parameters->append(index);
+        // auto index = ctxt->conv->convert(mc->arguments->at(1)->expression);
+        // parameters->append(index);
         return primitive;
     } else if (em->method->name == "write") {
         auto primitive = mkPrimitive("register_write");
@@ -789,53 +728,30 @@ void ExternConverter_Checksum::convertExternInstance(
 
 void ExternConverter_InternetChecksum::convertExternInstance(
     UNUSED ConversionContext* ctxt, UNUSED const IR::Declaration* c,
-    UNUSED const IR::ExternBlock* eb, UNUSED const bool& emitExterns) {
-    auto inst = c->to<IR::Declaration_Instance>();
-    cstring name = inst->controlPlaneName();
-    auto jctr = new Util::JsonObject();
-    jctr->emplace("name", name);
-    jctr->emplace("id", nextId("checksums"));
-    jctr->emplace_non_null("source_info", eb->sourceInfoJsonObj());
-
-    jctr->emplace("type", "generic");
-    jctr->emplace("verify", true);
-    jctr->emplace("update", true);
-
-    // Add json into EXTERN_INSTANCES NODE
-
-    auto extern_obj = new Util::JsonObject();
-    extern_obj->emplace("name", name);
-    extern_obj->emplace("id", nextId("extern_instances"));
-    extern_obj->emplace("type", eb->getName());
-    extern_obj->emplace("source_info", inst->sourceInfoJsonObj());
-    ctxt->json->externs->append(extern_obj);
-    Util::JsonArray *arr = ctxt->json->insert_array_field(extern_obj, "attribute_values");
-
-    ctxt->json->checksums->append(jctr);
-}
+    UNUSED const IR::ExternBlock* eb, UNUSED const bool& emitExterns)
+{ /* TODO */ }
 
 void ExternConverter_Counter::convertExternInstance(
     UNUSED ConversionContext* ctxt, UNUSED const IR::Declaration* c,
     UNUSED const IR::ExternBlock* eb, UNUSED const bool& emitExterns) {
     auto inst = c->to<IR::Declaration_Instance>();
     cstring name = inst->controlPlaneName();
+    auto jctr = new Util::JsonObject();
+    jctr->emplace("name", name);
+    jctr->emplace("id", nextId("counter_arrays"));
+    jctr->emplace_non_null("source_info", eb->sourceInfoJsonObj());
     auto sz = eb->findParameterValue("n_counters");
     CHECK_NULL(sz);
     if (!sz->is<IR::Constant>()) {
         modelError("%1%: expected a constant", sz->getNode());
         return;
     }
-
-    // adding counter instance to counter_arrays[]
-    auto jctr = new Util::JsonObject();
-    jctr->emplace("name", name);
-    jctr->emplace("id", nextId("counter_arrays"));
-    jctr->emplace_non_null("source_info", eb->sourceInfoJsonObj());
     jctr->emplace("size", sz->to<IR::Constant>()->value);
     jctr->emplace("is_direct", false);
     ctxt->json->counters->append(jctr);
 
-    // add counter instance to extern_instances
+    // Code below used to add json into EXTERN_INSTANCES NODE
+
     auto extern_obj = new Util::JsonObject();
     extern_obj->emplace("name", name);
     extern_obj->emplace("id", nextId("extern_instances"));
@@ -926,57 +842,21 @@ void ExternConverter_DirectCounter::convertExternInstance(
 void ExternConverter_Meter::convertExternInstance(
     UNUSED ConversionContext* ctxt, UNUSED const IR::Declaration* c,
     UNUSED const IR::ExternBlock* eb, UNUSED const bool& emitExterns) {
-    if (eb->getConstructorParameters()->size() != 2) {
-      modelError("%1%: expected two parameters", eb);
-      return;
-    }
-
     auto inst = c->to<IR::Declaration_Instance>();
     cstring name = inst->controlPlaneName();
-
-    // adding meter instance into extern_instances
-    auto jext_mtr = new Util::JsonObject();
-    jext_mtr->emplace("name", name);
-    jext_mtr->emplace("id", nextId("extern_instances"));
-    jext_mtr->emplace("type", eb->getName());
-    jext_mtr->emplace_non_null("source_info", eb->sourceInfoJsonObj());
-    ctxt->json->externs->append(jext_mtr);
-
-    // adding attributes to meter extern_instance
-    Util::JsonArray *arr = ctxt->json->insert_array_field(jext_mtr, "attribute_values");
-
-    // is_direct
-    auto is_direct = new Util::JsonObject();
-    is_direct->emplace("name", "is_direct");
-    is_direct->emplace("type", "hexstr");
-    is_direct->emplace("value", 0);
-    arr->append(is_direct);
-
-    // meter_array size
+    auto jmtr = new Util::JsonObject();
+    jmtr->emplace("name", name);
+    jmtr->emplace("id", nextId("meter_arrays"));
+    jmtr->emplace_non_null("source_info", eb->sourceInfoJsonObj());
+    jmtr->emplace("is_direct", false);
     auto sz = eb->findParameterValue("n_meters");
     CHECK_NULL(sz);
     if (!sz->is<IR::Constant>()) {
         modelError("%1%: expected a constant", sz->getNode());
         return;
     }
-    auto attr_name = eb->getConstructorParameters()->getParameter(0);
-    auto s = sz->to<IR::Constant>();
-    auto bitwidth = ctxt->typeMap->minWidthBits(s->type, sz->getNode());
-    cstring val = BMV2::stringRepr(s->value, ROUNDUP(bitwidth, 8));
-    auto msz = new Util::JsonObject();
-    msz->emplace("name", attr_name->toString());
-    msz->emplace("type", "hexstr");
-    msz->emplace("value", val);
-    arr->append(msz);
-
-    // rate count
-    auto rc = new Util::JsonObject();
-    rc->emplace("name", "rate_count");
-    rc->emplace("type", "hexstr");
-    rc->emplace("value", 2);
-    arr->append(rc);
-
-    // meter kind
+    jmtr->emplace("size", sz->to<IR::Constant>()->value);
+    jmtr->emplace("rate_count", 2);
     auto mkind = eb->findParameterValue("type");
     CHECK_NULL(mkind);
     if (!mkind->is<IR::Declaration_ID>()) {
@@ -991,11 +871,8 @@ void ExternConverter_Meter::convertExternInstance(
         type = "bytes";
     else
         ::error(ErrorType::ERR_UNEXPECTED, "%1%: unexpected meter type", mkind->getNode());
-    auto k = new Util::JsonObject();
-    k->emplace("name", "type");
-    k->emplace("type", "string");
-    k->emplace("value", type);
-    arr->append(k);
+    jmtr->emplace("type", type);
+    ctxt->json->meter_arrays->append(jmtr);
 }
 
 void ExternConverter_DirectMeter::convertExternInstance(
@@ -1042,10 +919,6 @@ void ExternConverter_DirectMeter::convertExternInstance(
 void ExternConverter_Register::convertExternInstance(
     UNUSED ConversionContext* ctxt, UNUSED const IR::Declaration* c,
     UNUSED const IR::ExternBlock* eb, UNUSED const bool& emitExterns) {
-    size_t paramSize = eb->getConstructorParameters()->size();
-    if (paramSize == 2) {
-        modelError("%1%: Expecting 1 parameter. Initial value not supported", eb->constructor);
-    }
     auto inst = c->to<IR::Declaration_Instance>();
     cstring name = inst->controlPlaneName();
     auto jreg = new Util::JsonObject();
@@ -1066,8 +939,8 @@ void ExternConverter_Register::convertExternInstance(
         return;
     }
     auto st = eb->instanceType->to<IR::Type_SpecializedCanonical>();
-    if (st->arguments->size() != 2) {
-        modelError("%1%: expected 2 type argument", st);
+    if (st->arguments->size() != 1) {
+        modelError("%1%: expected 1 type argument", st);
         return;
     }
     auto regType = st->arguments->at(0);
@@ -1106,7 +979,7 @@ void ExternConverter_ActionProfile::convertExternInstance(
 
     auto sz = eb->findParameterValue("size");
     BUG_CHECK(sz, "%1%Invalid declaration of extern ActionProfile ctor: no size param",
-              eb->constructor->srcInfo);
+            eb->constructor->srcInfo);
 
     if (!sz->is<IR::Constant>()) {
         ::error(ErrorType::ERR_EXPECTED, "%1%: expected a constant", sz);
@@ -1131,8 +1004,9 @@ void ExternConverter_ActionSelector::convertExternInstance(
     action_profile->emplace_non_null("source_info", eb->sourceInfoJsonObj());
 
     auto sz = eb->findParameterValue("size");
-    BUG_CHECK(sz, "%1%Invalid declaration of extern ActionSelector: no size param",
-              eb->constructor->srcInfo);
+    BUG_CHECK(sz, "%1%Invalid declaration of extern ActionProfile ctor: no size param",
+        eb->constructor->srcInfo);
+
     if (!sz->is<IR::Constant>()) {
         ::error(ErrorType::ERR_EXPECTED, "%1%: expected a constant", sz);
         return;
