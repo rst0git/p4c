@@ -168,10 +168,6 @@ void MtPsaProgramStructure::createControls(ConversionContext* ctxt) {
     auto cvt = new BMV2::ControlConverter(ctxt, "ingress", true);
     auto ingress = pipelines.at("ingress");
     ingress->apply(*cvt);
-
-    cvt = new BMV2::ControlConverter(ctxt, "egress", true);
-    auto egress = pipelines.at("egress");
-    egress->apply(*cvt);
 }
 
 void MtPsaProgramStructure::createDeparsers(ConversionContext* ctxt) {
@@ -224,18 +220,15 @@ bool MtParsePsaArchitecture::preorder(const IR::PackageBlock* block) {
     pkg = block->getParameterValue("egress");
     if (auto egress = pkg->to<IR::PackageBlock>()) {
         auto parser = egress->getParameterValue("ep")->to<IR::ParserBlock>();
-        auto pipeline = egress->getParameterValue("eg")->to<IR::ControlBlock>();
         auto deparser = egress->getParameterValue("ed")->to<IR::ControlBlock>();
         structure->block_type.emplace(parser->container, std::make_pair(EGRESS, PARSER));
-        structure->block_type.emplace(pipeline->container, std::make_pair(EGRESS, PIPELINE));
         structure->block_type.emplace(deparser->container, std::make_pair(EGRESS, DEPARSER));
-        structure->pipeline_controls.emplace(pipeline->container->name);
         structure->non_pipeline_controls.emplace(deparser->container->name);
     }
     return false;
 }
 
-void InspectPsaProgram::postorder(const IR::Declaration_Instance* di) {
+void InspectMtPsaProgram::postorder(const IR::Declaration_Instance* di) {
     if (!pinfo->resourceMap.count(di))
         return;
     auto blk = pinfo->resourceMap.at(di);
@@ -246,7 +239,7 @@ void InspectPsaProgram::postorder(const IR::Declaration_Instance* di) {
     }
 }
 
-bool InspectPsaProgram::isHeaders(const IR::Type_StructLike* st) {
+bool InspectMtPsaProgram::isHeaders(const IR::Type_StructLike* st) {
     bool result = false;
     for (auto f : st->fields) {
         if (f->type->is<IR::Type_Header>() || f->type->is<IR::Type_Stack>()) {
@@ -256,7 +249,7 @@ bool InspectPsaProgram::isHeaders(const IR::Type_StructLike* st) {
     return result;
 }
 
-void InspectPsaProgram::addHeaderType(const IR::Type_StructLike *st) {
+void InspectMtPsaProgram::addHeaderType(const IR::Type_StructLike *st) {
     LOG5("In addHeaderType with struct " << st->toString());
     if (st->is<IR::Type_HeaderUnion>()) {
       LOG5("Struct is Type_HeaderUnion");
@@ -277,7 +270,7 @@ void InspectPsaProgram::addHeaderType(const IR::Type_StructLike *st) {
     }
 }
 
-void InspectPsaProgram::addHeaderInstance(const IR::Type_StructLike *st, cstring name) {
+void InspectMtPsaProgram::addHeaderInstance(const IR::Type_StructLike *st, cstring name) {
     auto inst = new IR::Declaration_Variable(name, st);
     if (st->is<IR::Type_Header>())
         pinfo->headers.emplace(name, inst);
@@ -287,7 +280,7 @@ void InspectPsaProgram::addHeaderInstance(const IR::Type_StructLike *st, cstring
         pinfo->header_unions.emplace(name, inst);
 }
 
-void InspectPsaProgram::addTypesAndInstances(const IR::Type_StructLike* type, bool isHeader) {
+void InspectMtPsaProgram::addTypesAndInstances(const IR::Type_StructLike* type, bool isHeader) {
     LOG5("Adding type " << type->toString() << " and isHeader " << isHeader);
     for (auto f : type->fields) {
         LOG5("Iterating through field " << f->toString());
@@ -375,7 +368,7 @@ void InspectPsaProgram::addTypesAndInstances(const IR::Type_StructLike* type, bo
 }
 
 // This visitor only visits the parameter in the statement from architecture.
-bool InspectPsaProgram::preorder(const IR::Parameter* param) {
+bool InspectMtPsaProgram::preorder(const IR::Parameter* param) {
     auto ft = typeMap->getType(param->getNode(), true);
     LOG3("add param " << ft);
     // only convert parameters that are IR::Type_StructLike
@@ -402,7 +395,7 @@ bool InspectPsaProgram::preorder(const IR::Parameter* param) {
     return false;
 }
 
-void InspectPsaProgram::postorder(const IR::P4Parser* p) {
+void InspectMtPsaProgram::postorder(const IR::P4Parser* p) {
     if (pinfo->block_type.count(p)) {
         auto info = pinfo->block_type.at(p);
         if (info.first == INGRESS && info.second == PARSER)
@@ -412,13 +405,11 @@ void InspectPsaProgram::postorder(const IR::P4Parser* p) {
     }
 }
 
-void InspectPsaProgram::postorder(const IR::P4Control *c) {
+void InspectMtPsaProgram::postorder(const IR::P4Control *c) {
     if (pinfo->block_type.count(c)) {
         auto info = pinfo->block_type.at(c);
         if (info.first == INGRESS && info.second == PIPELINE)
             pinfo->pipelines.emplace("ingress", c);
-        else if (info.first == EGRESS && info.second == PIPELINE)
-            pinfo->pipelines.emplace("egress", c);
         else if (info.first == INGRESS && info.second == DEPARSER)
             pinfo->deparsers.emplace("ingress", c);
         else if (info.first == EGRESS && info.second == DEPARSER)
@@ -434,8 +425,8 @@ void MtPsaSwitchBackend::convert(const IR::ToplevelBlock* tlb) {
     auto main = tlb->getMain();
     if (!main) return;
 
-    if (main->type->name != "PSA_Switch")
-        ::warning(ErrorType::WARN_INVALID, "%1%: the main package should be called PSA_Switch"
+    if (main->type->name != "MTPSA_Switch")
+        ::warning(ErrorType::WARN_INVALID, "%1%: the main package should be called MTPSA_Switch"
                   "; are you using the wrong architecture?", main->type->name);
 
     main->apply(*parsePsaArch);
@@ -446,21 +437,20 @@ void MtPsaSwitchBackend::convert(const IR::ToplevelBlock* tlb) {
         /* TODO */
         // new RenameUserMetadata(refMap, userMetaType, userMetaName),
         new P4::ClearTypeMap(typeMap),  // because the user metadata type has changed
-        new P4::SynthesizeActions(refMap, typeMap,
-                new SkipControls(&structure.non_pipeline_controls)),
+        new P4::SynthesizeActions(refMap, typeMap, new SkipControls(&structure.non_pipeline_controls)),
         new P4::MoveActionsToTables(refMap, typeMap),
         new P4::TypeChecking(refMap, typeMap),
         new P4::SimplifyControlFlow(refMap, typeMap),
         new LowerExpressions(typeMap),
         new P4::ConstantFolding(refMap, typeMap, false),
         new P4::TypeChecking(refMap, typeMap),
-        new RemoveComplexExpressions(refMap, typeMap,
-                new ProcessControls(&structure.pipeline_controls)),
+        new RemoveComplexExpressions(refMap, typeMap, new ProcessControls(&structure.pipeline_controls)),
         new P4::SimplifyControlFlow(refMap, typeMap),
         new P4::RemoveAllUnusedDeclarations(refMap),
         evaluator,
         new VisitFunctor([this, evaluator, structure]() {
-            toplevel = evaluator->getToplevelBlock(); }),
+            toplevel = evaluator->getToplevelBlock();
+        }),
     };
     auto hook = options.getDebugHook();
     simplify.addDebugHook(hook);
@@ -470,14 +460,15 @@ void MtPsaSwitchBackend::convert(const IR::ToplevelBlock* tlb) {
     toplevel->apply(*new BMV2::BuildResourceMap(&structure.resourceMap));
 
     main = toplevel->getMain();
-    if (!main) return;  // no main
+    if (!main)
+      return;  // no main
     main->apply(*parsePsaArch);
     program = toplevel->getProgram();
 
     PassManager toJson = {
         new DiscoverStructure(&structure),
-        new InspectPsaProgram(refMap, typeMap, &structure),
-        new ConvertPsaToJson(refMap, typeMap, toplevel, json, &structure)
+        new InspectMtPsaProgram(refMap, typeMap, &structure),
+        new ConvertMtPsaToJson(refMap, typeMap, toplevel, json, &structure)
     };
     for (const auto &pEnum : *enumMap) {
       auto name = pEnum.first->getName();

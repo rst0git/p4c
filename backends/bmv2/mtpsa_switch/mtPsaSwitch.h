@@ -182,13 +182,13 @@ class MtParsePsaArchitecture : public Inspector {
     }
 };
 
-class InspectPsaProgram : public Inspector {
+class InspectMtPsaProgram : public Inspector {
     P4::ReferenceMap* refMap;
     P4::TypeMap* typeMap;
     MtPsaProgramStructure *pinfo;
 
  public:
-    InspectPsaProgram(P4::ReferenceMap* refMap, P4::TypeMap* typeMap, MtPsaProgramStructure *pinfo)
+    InspectMtPsaProgram(P4::ReferenceMap* refMap, P4::TypeMap* typeMap, MtPsaProgramStructure *pinfo)
         : refMap(refMap), typeMap(typeMap), pinfo(pinfo) {
         CHECK_NULL(refMap);
         CHECK_NULL(typeMap);
@@ -207,7 +207,7 @@ class InspectPsaProgram : public Inspector {
     bool preorder(const IR::Parameter* parameter) override;
 };
 
-class ConvertPsaToJson : public Inspector {
+class ConvertMtPsaToJson : public Inspector {
  public:
     P4::ReferenceMap *refMap;
     P4::TypeMap *typeMap;
@@ -215,7 +215,7 @@ class ConvertPsaToJson : public Inspector {
     JsonObjects *json;
     MtPsaProgramStructure *structure;
 
-    ConvertPsaToJson(P4::ReferenceMap *refMap, P4::TypeMap *typeMap,
+    ConvertMtPsaToJson(P4::ReferenceMap *refMap, P4::TypeMap *typeMap,
                      const IR::ToplevelBlock *toplevel,
                      JsonObjects *json, MtPsaProgramStructure *structure)
         : refMap(refMap), typeMap(typeMap), toplevel(toplevel), json(json),

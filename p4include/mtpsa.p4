@@ -829,15 +829,9 @@ package IngressPipeline<IH, IM, NM, CI2EM, RESUBM, RECIRCM>(
     Ingress<IH, IM> ig,
     IngressDeparser<IH, IM, CI2EM, RESUBM, NM> id);
 
-package EgressPipeline<EH, EM, NM, CI2EM, CE2EM, RECIRCM>(
-    EgressParser<EH, EM, NM, CI2EM, CE2EM> ep,
-    Egress<EH, EM> eg,
-    EgressDeparser<EH, EM, CE2EM, RECIRCM> ed);
-
-package PSA_Switch<IH, IM, EH, EM, NM, CI2EM, CE2EM, RESUBM, RECIRCM> (
+package MTPSA_Switch<IH, IM, EH, EM, NM, CI2EM, CE2EM, RESUBM, RECIRCM> (
     IngressPipeline<IH, IM, NM, CI2EM, RESUBM, RECIRCM> ingress,
     PacketReplicationEngine pre,
-    EgressPipeline<EH, EM, NM, CI2EM, CE2EM, RECIRCM> egress,
     BufferingQueueingEngine bqe);
 
 // END:Programmable_blocks

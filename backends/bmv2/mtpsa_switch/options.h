@@ -16,7 +16,7 @@ class MtPsaSwitchOptions : public BMV2Options {
                     MtPsaSwitchMidEnd midEnd(*this, outStream);
                     exit(0);
                     return false; },
-                "[PsaSwitch back-end] Lists exact name of all midend passes.\n");
+                "[MtPsaSwitch back-end] Lists exact name of all midend passes.\n");
     }
 };
 
