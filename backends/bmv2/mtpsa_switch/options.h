@@ -1,5 +1,5 @@
-#ifndef BACKENDS_BMV2_PSA_SWITCH_OPTIONS_H_
-#define BACKENDS_BMV2_PSA_SWITCH_OPTIONS_H_
+#ifndef BACKENDS_BMV2_MTPSA_SWITCH_OPTIONS_H_
+#define BACKENDS_BMV2_MTPSA_SWITCH_OPTIONS_H_
 
 #include "backends/bmv2/common/options.h"
 #include "backends/bmv2/mtpsa_switch/midend.h"
@@ -17,6 +17,9 @@ class MtPsaSwitchOptions : public BMV2Options {
                     exit(0);
                     return false; },
                 "[MtPsaSwitch back-end] Lists exact name of all midend passes.\n");
+        registerOption("--user", "user_id",
+                [this](const char* arg) { userProgram = true; userProgramID = arg; return true; },
+                "[MtPsaSwitch back-end] Compile user program.\n");
     }
 };
 
@@ -24,4 +27,4 @@ using MtPsaSwitchContext = P4CContextWithOptions<MtPsaSwitchOptions>;
 
 };  // namespace BMV2
 
-#endif /* BACKENDS_BMV2_PSA_SWITCH_OPTIONS_H_ */
+#endif /* BACKENDS_BMV2_MTPSA_SWITCH_OPTIONS_H_ */

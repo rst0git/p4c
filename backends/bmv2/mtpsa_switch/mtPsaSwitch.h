@@ -41,7 +41,7 @@ class MtPsaSwitchExpressionConverter : public ExpressionConverter {
      * if it is, false otherwise.
      */
     static bool isCounterMetadata(cstring ptName) {
-      return !strcmp(ptName, "PSA_CounterType_t");
+      return !strcmp(ptName, "MTPSA_CounterType_t");
     }
 
     /**
@@ -49,15 +49,14 @@ class MtPsaSwitchExpressionConverter : public ExpressionConverter {
      * if it is, false otherwise.
      */
     static bool isStandardMetadata(cstring ptName) {
-      return (!strcmp(ptName, "psa_ingress_parser_input_metadata_t") ||
-        !strcmp(ptName, "psa_egress_parser_input_metadata_t") ||
-        !strcmp(ptName, "psa_ingress_input_metadata_t") ||
-        !strcmp(ptName, "psa_ingress_output_metadata_t") ||
-        !strcmp(ptName, "psa_egress_input_metadata_t") ||
-        !strcmp(ptName, "psa_egress_deparser_input_metadata_t") ||
-        !strcmp(ptName, "psa_egress_output_metadata_t"));
+      return (!strcmp(ptName, "mtpsa_ingress_parser_input_metadata_t") ||
+        !strcmp(ptName, "mtpsa_egress_parser_input_metadata_t") ||
+        !strcmp(ptName, "mtpsa_ingress_input_metadata_t") ||
+        !strcmp(ptName, "mtpsa_ingress_output_metadata_t") ||
+        !strcmp(ptName, "mtpsa_egress_input_metadata_t") ||
+        !strcmp(ptName, "mtpsa_egress_deparser_input_metadata_t") ||
+        !strcmp(ptName, "mtpsa_egress_output_metadata_t"));
     }
-
 
     Util::IJson* convertParam(UNUSED const IR::Parameter* param, cstring fieldName) override {
       cstring ptName = param->type->toString();
@@ -193,7 +192,7 @@ class InspectMtPsaProgram : public Inspector {
         CHECK_NULL(refMap);
         CHECK_NULL(typeMap);
         CHECK_NULL(pinfo);
-        setName("InspectPsaProgram");
+        setName("InspectMtPsaProgram");
     }
 
     void postorder(const IR::P4Parser *p) override;
