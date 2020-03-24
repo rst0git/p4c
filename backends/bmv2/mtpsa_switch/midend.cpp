@@ -49,7 +49,7 @@ class MtPsaEnumOn32Bits : public P4::ChooseEnumRepresentation {
     cstring filename;
 
     bool convert(const IR::Type_Enum* type) const override {
-        if (type->name == "PSA_PacketPath_t")
+        if (type->name == "MTPSA_PacketPath_t")
             return true;
         if (type->srcInfo.isValid()) {
             auto sourceFile = type->srcInfo.getSourceFile();
@@ -68,8 +68,10 @@ class MtPsaEnumOn32Bits : public P4::ChooseEnumRepresentation {
 
 MtPsaSwitchMidEnd::MtPsaSwitchMidEnd(CompilerOptions& options, std::ostream* outStream)
                                 : MidEnd(options) {
-    auto convertEnums = new P4::ConvertEnums(&refMap, &typeMap, new MtPsaEnumOn32Bits("mtpsa.p4"));
+    auto p4Filename = options.userProgram ? "mtpsa_user.p4" : "mtpsa.p4";
+    auto convertEnums = new P4::ConvertEnums(&refMap, &typeMap, new MtPsaEnumOn32Bits(p4Filename));
     auto evaluator = new P4::EvaluatorPass(&refMap, &typeMap);
+
     if (BMV2::MtPsaSwitchContext::get().options().loadIRFromJson == false) {
         std::initializer_list<Visitor *> midendPasses = {
             options.ndebug ? new P4::RemoveAssertAssume(&refMap, &typeMap) : nullptr,
@@ -107,10 +109,10 @@ MtPsaSwitchMidEnd::MtPsaSwitchMidEnd(CompilerOptions& options, std::ostream* out
             new P4::LocalCopyPropagation(&refMap, &typeMap),
             new P4::ConstantFolding(&refMap, &typeMap),
             new P4::MoveDeclarations(),
-            new P4::ValidateTableProperties({ "psa_implementation",
-                                              "psa_direct_counter",
-                                              "psa_direct_meter",
-                                              "psa_idle_timeout",
+            new P4::ValidateTableProperties({ "mtpsa_implementation",
+                                              "mtpsa_direct_counter",
+                                              "mtpsa_direct_meter",
+                                              "mtpsa_idle_timeout",
                                               "size" }),
             new P4::SimplifyControlFlow(&refMap, &typeMap),
             new P4::CompileTimeOperations(),
@@ -135,7 +137,7 @@ MtPsaSwitchMidEnd::MtPsaSwitchMidEnd(CompilerOptions& options, std::ostream* out
             removePasses(options.passesToExcludeMidend);
         }
     } else {
-        auto fillEnumMap = new P4::FillEnumMap(new MtPsaEnumOn32Bits("mtpsa.p4"), &typeMap);
+        auto fillEnumMap = new P4::FillEnumMap(new MtPsaEnumOn32Bits(p4Filename), &typeMap);
         addPasses({
             new P4::ResolveReferences(&refMap),
             new P4::TypeChecking(&refMap, &typeMap),

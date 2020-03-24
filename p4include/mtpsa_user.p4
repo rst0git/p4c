@@ -1,10 +1,7 @@
-#ifndef __MTPSA_P4__
-#define __MTPSA_P4__
+#ifndef __MTPSA_USER_P4__
+#define __MTPSA_USER_P4__
 
 #include <core.p4>
-
-#ifndef _MULTI_TENANT_PORTABLE_SWITCH_ARCHITECTURE_P4_
-#define _MULTI_TENANT_PORTABLE_SWITCH_ARCHITECTURE_P4_
 
 #define MTPSA_ON_BMV2_CORE_TYPES
 #ifdef MTPSA_ON_BMV2_CORE_TYPES
@@ -14,7 +11,6 @@ typedef bit<32> MulticastGroupUint_t;
 typedef bit<16> CloneSessionIdUint_t;
 typedef bit<8>  ClassOfServiceUint_t;
 typedef bit<16> PacketLengthUint_t;
-typedef bit<16> EgressInstanceUint_t;
 typedef bit<64> TimestampUint_t;
 
 @p4runtime_translation("p4.org/mtpsa/v1/PortId_t", 32)
@@ -27,13 +23,10 @@ type CloneSessionIdUint_t CloneSessionId_t;
 type ClassOfServiceUint_t ClassOfService_t;
 @p4runtime_translation("p4.org/mtpsa/v1/PacketLength_t", 16)
 type PacketLengthUint_t   PacketLength_t;
-@p4runtime_translation("p4.org/mtpsa/v1/EgressInstance_t", 16)
-type EgressInstanceUint_t EgressInstance_t;
 @p4runtime_translation("p4.org/mtpsa/v1/Timestamp_t", 64)
 type TimestampUint_t      Timestamp_t;
 typedef error   ParserError_t;
 
-const PortId_t MTPSA_PORT_RECIRCULATE = (PortId_t) 0xfffffffa;
 const PortId_t MTPSA_PORT_CPU = (PortId_t) 0xfffffffd;
 
 const CloneSessionId_t MTPSA_CLONE_SESSION_TO_CPU = (CloneSessionId_t) 0;
@@ -48,7 +41,6 @@ typedef bit<unspecified> MulticastGroupUint_t;
 typedef bit<unspecified> CloneSessionIdUint_t;
 typedef bit<unspecified> ClassOfServiceUint_t;
 typedef bit<unspecified> PacketLengthUint_t;
-typedef bit<unspecified> EgressInstanceUint_t;
 typedef bit<unspecified> TimestampUint_t;
 
 @p4runtime_translation("p4.org/mtpsa/v1/PortId_t", 32)
@@ -61,13 +53,10 @@ type CloneSessionIdUint_t CloneSessionId_t;
 type ClassOfServiceUint_t ClassOfService_t;
 @p4runtime_translation("p4.org/mtpsa/v1/PacketLength_t", 16)
 type PacketLengthUint_t   PacketLength_t;
-@p4runtime_translation("p4.org/mtpsa/v1/EgressInstance_t", 16)
-type EgressInstanceUint_t EgressInstance_t;
 @p4runtime_translation("p4.org/mtpsa/v1/Timestamp_t", 64)
 type TimestampUint_t      Timestamp_t;
 typedef error   ParserError_t;
 
-const PortId_t MTPSA_PORT_RECIRCULATE = (PortId_t) unspecified;
 const PortId_t MTPSA_PORT_CPU = (PortId_t) unspecified;
 
 const CloneSessionId_t MTPSA_CLONE_SESSION_TO_CPU = (CloneSessiontId_t) unspecified;
@@ -79,7 +68,6 @@ typedef bit<32> MulticastGroupInHeaderUint_t;
 typedef bit<16> CloneSessionIdInHeaderUint_t;
 typedef bit<8>  ClassOfServiceInHeaderUint_t;
 typedef bit<16> PacketLengthInHeaderUint_t;
-typedef bit<16> EgressInstanceInHeaderUint_t;
 typedef bit<64> TimestampInHeaderUint_t;
 
 @p4runtime_translation("p4.org/mtpsa/v1/PortIdInHeader_t", 32)
@@ -92,8 +80,6 @@ type  CloneSessionIdInHeaderUint_t CloneSessionIdInHeader_t;
 type  ClassOfServiceInHeaderUint_t ClassOfServiceInHeader_t;
 @p4runtime_translation("p4.org/mtpsa/v1/PacketLengthInHeader_t", 16)
 type  PacketLengthInHeaderUint_t   PacketLengthInHeader_t;
-@p4runtime_translation("p4.org/mtpsa/v1/EgressInstanceInHeader_t", 16)
-type  EgressInstanceInHeaderUint_t EgressInstanceInHeader_t;
 @p4runtime_translation("p4.org/mtpsa/v1/TimestampInHeader_t", 64)
 type  TimestampInHeaderUint_t      TimestampInHeader_t;
 
@@ -111,9 +97,6 @@ ClassOfService_t mtpsa_ClassOfService_header_to_int (in ClassOfServiceInHeader_t
 }
 PacketLength_t mtpsa_PacketLength_header_to_int (in PacketLengthInHeader_t x) {
     return (PacketLength_t) (PacketLengthUint_t) (PacketLengthInHeaderUint_t) x;
-}
-EgressInstance_t mtpsa_EgressInstance_header_to_int (in EgressInstanceInHeader_t x) {
-    return (EgressInstance_t) (EgressInstanceUint_t) (EgressInstanceInHeaderUint_t) x;
 }
 Timestamp_t mtpsa_Timestamp_header_to_int (in TimestampInHeader_t x) {
     return (Timestamp_t) (TimestampUint_t) (TimestampInHeaderUint_t) x;
@@ -134,9 +117,6 @@ ClassOfServiceInHeader_t mtpsa_ClassOfService_int_to_header (in ClassOfService_t
 PacketLengthInHeader_t mtpsa_PacketLength_int_to_header (in PacketLength_t x) {
     return (PacketLengthInHeader_t) (PacketLengthInHeaderUint_t) (PacketLengthUint_t) x;
 }
-EgressInstanceInHeader_t mtpsa_EgressInstance_int_to_header (in EgressInstance_t x) {
-    return (EgressInstanceInHeader_t) (EgressInstanceInHeaderUint_t) (EgressInstanceUint_t) x;
-}
 TimestampInHeader_t mtpsa_Timestamp_int_to_header (in Timestamp_t x) {
     return (TimestampInHeader_t) (TimestampInHeaderUint_t) (TimestampUint_t) x;
 }
@@ -147,67 +127,34 @@ enum MTPSA_IdleTimeout_t {
 };
 
 enum MTPSA_PacketPath_t {
-    NORMAL,     /// Packet received by ingress that is none of the cases below.
+    NORMAL,           /// Packet received by ingress that is none of the cases below.
     NORMAL_UNICAST,   /// Normal packet received by egress which is unicast
-    NORMAL_MULTICAST, /// Normal packet received by egress which is multicast
-    CLONE_I2E,  /// Packet created via a clone operation in ingress, destined for egress
-    CLONE_E2E,  /// Packet created via a clone operation in egress, destined for egress
-    RESUBMIT,   /// Packet arrival is the result of a resubmit operation
-    RECIRCULATE /// Packet arrival is the result of a recirculate operation
+    NORMAL_MULTICAST /// Normal packet received by egress which is multicast
 }
 
-struct mtpsa_ingress_parser_input_metadata_t {
-  PortId_t                 ingress_port;
+struct mtpsa_parser_input_metadata_t {
+  PortId_t                 port;
   MTPSA_PacketPath_t       packet_path;
 }
 
-struct mtpsa_egress_parser_input_metadata_t {
-  PortId_t                 egress_port;
+struct mtpsa_input_metadata_t {
+  PortId_t                 port;
   MTPSA_PacketPath_t       packet_path;
-}
-
-struct mtpsa_ingress_input_metadata_t {
-  PortId_t                 ingress_port;
-  MTPSA_PacketPath_t       packet_path;
-  Timestamp_t              ingress_timestamp;
+  Timestamp_t              timestamp;
   ParserError_t            parser_error;
 }
 
-struct mtpsa_ingress_output_metadata_t {
+struct mtpsa_output_metadata_t {
   ClassOfService_t         class_of_service; // 0
   bool                     clone;            // false
   CloneSessionId_t         clone_session_id; // initial value is undefined
   bool                     drop;             // true
-  bool                     resubmit;         // false
   MulticastGroup_t         multicast_group;  // 0
-  PortId_t                 egress_port;      // initial value is undefined
+  PortId_t                 port;      // initial value is undefined
 }
 
-struct mtpsa_egress_input_metadata_t {
-  ClassOfService_t         class_of_service;
-  PortId_t                 egress_port;
-  MTPSA_PacketPath_t       packet_path;
-  EgressInstance_t         instance;       /// instance comes from the PacketReplicationEngine
-  Timestamp_t              egress_timestamp;
-  ParserError_t            parser_error;
-}
-
-struct mtpsa_egress_deparser_input_metadata_t {
-  PortId_t                 egress_port;
-}
-
-struct mtpsa_egress_output_metadata_t {
-  bool                     clone;         // false
-  CloneSessionId_t         clone_session_id; // initial value is undefined
-  bool                     drop;          // false
-}
-
-extern bool mtpsa_clone_i2e(in mtpsa_ingress_output_metadata_t istd);
-extern bool mtpsa_resubmit(in mtpsa_ingress_output_metadata_t istd);
-extern bool mtpsa_normal(in mtpsa_ingress_output_metadata_t istd);
-extern bool mtpsa_clone_e2e(in mtpsa_egress_output_metadata_t istd);
-extern bool mtpsa_recirculate(in mtpsa_egress_output_metadata_t istd,
-                            in mtpsa_egress_deparser_input_metadata_t edstd);
+extern bool mtpsa_clone(in mtpsa_output_metadata_t istd);
+extern bool mtpsa_normal(in mtpsa_output_metadata_t istd);
 
 extern void assert(in bool check);
 extern void assume(in bool check);
@@ -217,37 +164,24 @@ match_kind {
     selector /// Used for dynamic action selection via the ActionSelector extern
 }
 
-action send_to_port(inout mtpsa_ingress_output_metadata_t meta,
-                    in PortId_t egress_port)
+action send_to_port(inout mtpsa_output_metadata_t meta,
+                    in PortId_t port)
 {
     meta.drop = false;
     meta.multicast_group = (MulticastGroup_t) 0;
-    meta.egress_port = egress_port;
+    meta.port = port;
 }
 
-action multicast(inout mtpsa_ingress_output_metadata_t meta,
+action multicast(inout mtpsa_output_metadata_t meta,
                  in MulticastGroup_t multicast_group)
 {
     meta.drop = false;
     meta.multicast_group = multicast_group;
 }
 
-action ingress_drop(inout mtpsa_ingress_output_metadata_t meta)
+action mark_to_drop(inout mtpsa_output_metadata_t meta)
 {
     meta.drop = true;
-}
-
-action egress_drop(inout mtpsa_egress_output_metadata_t meta)
-{
-    meta.drop = true;
-}
-
-extern PacketReplicationEngine {
-    PacketReplicationEngine();
-}
-
-extern BufferingQueueingEngine {
-    BufferingQueueingEngine();
 }
 
 enum MTPSA_HashAlgorithm_t {
@@ -344,63 +278,28 @@ extern Digest<T> {
   void pack(in T data);           /// emit data into the stream
 }
 
-parser IngressParser<H, M, RESUBM, RECIRCM>(
+parser Parser<H, M>(
     packet_in buffer,
     out H parsed_hdr,
     inout M user_meta,
-    in mtpsa_ingress_parser_input_metadata_t istd,
-    in RESUBM resubmit_meta,
-    in RECIRCM recirculate_meta);
+    in mtpsa_parser_input_metadata_t istd);
 
-control Ingress<H, M>(
-    inout H hdr, inout M user_meta,
-    in    mtpsa_ingress_input_metadata_t  istd,
-    inout mtpsa_ingress_output_metadata_t ostd);
+control Pipeline<H, M>(
+    inout H hdr,
+    inout M user_meta,
+    in    mtpsa_input_metadata_t  istd,
+    inout mtpsa_output_metadata_t ostd);
 
-control IngressDeparser<H, M, CI2EM, RESUBM, NM>(
+control Deparser<H, M, NM>(
     packet_out buffer,
-    out CI2EM clone_i2e_meta,
-    out RESUBM resubmit_meta,
     out NM normal_meta,
     inout H hdr,
     in M meta,
-    in mtpsa_ingress_output_metadata_t istd);
+    in mtpsa_output_metadata_t istd);
 
-parser EgressParser<H, M, NM, CI2EM, CE2EM>(
-    packet_in buffer,
-    out H parsed_hdr,
-    inout M user_meta,
-    in mtpsa_egress_parser_input_metadata_t istd,
-    in NM normal_meta,
-    in CI2EM clone_i2e_meta,
-    in CE2EM clone_e2e_meta);
+package MTPSA_User_Switch<IH, IM, NM> (
+    Parser<IH, IM> pr,
+    Pipeline<IH, IM> pi,
+    Deparser<IH, IM, NM> dp);
 
-control Egress<H, M>(
-    inout H hdr, inout M user_meta,
-    in    mtpsa_egress_input_metadata_t  istd,
-    inout mtpsa_egress_output_metadata_t ostd);
-
-control EgressDeparser<H, M, CE2EM, RECIRCM>(
-    packet_out buffer,
-    out CE2EM clone_e2e_meta,
-    out RECIRCM recirculate_meta,
-    inout H hdr,
-    in M meta,
-    in mtpsa_egress_output_metadata_t istd,
-    in mtpsa_egress_deparser_input_metadata_t edstd);
-
-package IngressPipeline<IH, IM, NM, CI2EM, RESUBM, RECIRCM>(
-    IngressParser<IH, IM, RESUBM, RECIRCM> ip,
-    Ingress<IH, IM> ig,
-    IngressDeparser<IH, IM, CI2EM, RESUBM, NM> id);
-
-package MTPSA_Switch<IH, IM, EH, EM, NM, CI2EM, CE2EM, RESUBM, RECIRCM> (
-    IngressPipeline<IH, IM, NM, CI2EM, RESUBM, RECIRCM> ingress,
-    PacketReplicationEngine pre,
-    EgressParser<EH, EM, NM, CI2EM, CE2EM> ep,
-    EgressDeparser<EH, EM, CE2EM, RECIRCM> ed,
-    BufferingQueueingEngine bqe);
-
-#endif  /* _MULTI_TENANT_PORTABLE_SWITCH_ARCHITECTURE_P4_ */
-
-#endif   // __MTPSA_P4__
+#endif   // __MTPSA_USER_P4__

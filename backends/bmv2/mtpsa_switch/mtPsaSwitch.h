@@ -37,7 +37,7 @@ class MtPsaSwitchExpressionConverter : public ExpressionConverter {
     }
 
     /**
-     * Checks if a string is of type PSA_CounterType_t returns true
+     * Checks if a string is of type MTPSA_CounterType_t returns true
      * if it is, false otherwise.
      */
     static bool isCounterMetadata(cstring ptName) {
@@ -77,7 +77,7 @@ class MtPsaSwitchExpressionConverter : public ExpressionConverter {
             cstring repr = BMV2::stringRepr(2, ROUNDUP(bitwidth, 32));
             jsn->emplace("value", repr);
           } else {
-            modelError("%1%: Exptected a PSA_CounterType_t", fieldName);
+            modelError("%1%: Exptected a MTPSA_CounterType_t", fieldName);
             return nullptr;
           }
           return jsn;
@@ -110,6 +110,8 @@ class MtPsaProgramStructure : public ProgramStructure {
     unsigned                            scalars_width = 0;
     unsigned                            error_width = 32;
     unsigned                            bool_width = 1;
+
+    bool userProgram;
 
     // architecture related information
     ordered_map<const IR::Node*, std::pair<gress_t, block_t>> block_type;
@@ -164,10 +166,10 @@ class MtPsaProgramStructure : public ProgramStructure {
     }
 };
 
-class MtParsePsaArchitecture : public Inspector {
+class ParseMtPsaArchitecture : public Inspector {
     MtPsaProgramStructure* structure;
  public:
-    explicit MtParsePsaArchitecture(MtPsaProgramStructure* structure) :
+    explicit ParseMtPsaArchitecture(MtPsaProgramStructure* structure) :
         structure(structure) { CHECK_NULL(structure); }
 
     bool preorder(const IR::ToplevelBlock* block) override;

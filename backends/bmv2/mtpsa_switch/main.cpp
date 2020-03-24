@@ -28,10 +28,10 @@ int main(int argc, char *const argv[]) {
     options.langVersion = CompilerOptions::FrontendVersion::P4_16;
     options.compilerVersion = BMV2_MTPSA_VERSION_STRING;
 
-    if (options.process(argc, argv) != nullptr) {
-            if (options.loadIRFromJson == false)
-                    options.setInputFile();
-    }
+    if (options.process(argc, argv) != nullptr)
+        if (options.loadIRFromJson == false)
+            options.setInputFile();
+
     if (::errorCount() > 0)
         return 1;
 
@@ -42,7 +42,6 @@ int main(int argc, char *const argv[]) {
 
     const IR::P4Program *program = nullptr;
     const IR::ToplevelBlock* toplevel = nullptr;
-
 
     if (options.loadIRFromJson == false) {
         program = P4::parseP4File(options);
@@ -98,8 +97,7 @@ int main(int argc, char *const argv[]) {
     if (::errorCount() > 0)
         return 1;
 
-    auto backend = new BMV2::MtPsaSwitchBackend(options, &midEnd.refMap,
-            &midEnd.typeMap, &midEnd.enumMap);
+    auto backend = new BMV2::MtPsaSwitchBackend(options, &midEnd.refMap, &midEnd.typeMap, &midEnd.enumMap);
 
     // Necessary because BMV2Context is expected at the top of stack in further processing
     AutoCompileContext autoContext(new BMV2::BMV2Context(BMV2::MtPsaSwitchContext::get()));

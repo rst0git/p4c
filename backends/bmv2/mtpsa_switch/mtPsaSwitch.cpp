@@ -132,6 +132,12 @@ void MtPsaProgramStructure::createHeaders(ConversionContext* ctxt) {
 }
 
 void MtPsaProgramStructure::createParsers(ConversionContext* ctxt) {
+    if (userProgram) {
+        auto cvt = new ParserConverter(ctxt, "parser");
+        auto ingress = parsers.at("ingress");
+        ingress->apply(*cvt);
+        return;
+    }
     {
         auto cvt = new ParserConverter(ctxt, "ingress_parser");
         auto ingress = parsers.at("ingress");
@@ -139,8 +145,8 @@ void MtPsaProgramStructure::createParsers(ConversionContext* ctxt) {
     }
     {
         auto cvt = new ParserConverter(ctxt, "egress_parser");
-        auto ingress = parsers.at("egress");
-        ingress->apply(*cvt);
+        auto egress = parsers.at("egress");
+        egress->apply(*cvt);
     }
 }
 
@@ -171,6 +177,12 @@ void MtPsaProgramStructure::createControls(ConversionContext* ctxt) {
 }
 
 void MtPsaProgramStructure::createDeparsers(ConversionContext* ctxt) {
+    if (userProgram) {
+        auto cvt = new DeparserConverter(ctxt, "deparser");
+        auto ingress = deparsers.at("ingress");
+        ingress->apply(*cvt);
+        return;
+    }
     {
         auto cvt = new DeparserConverter(ctxt, "ingress_deparser");
         auto ingress = deparsers.at("ingress");
@@ -190,7 +202,7 @@ void MtPsaProgramStructure::createGlobals() {
     // }
 }
 
-bool MtParsePsaArchitecture::preorder(const IR::ToplevelBlock* block) {
+bool ParseMtPsaArchitecture::preorder(const IR::ToplevelBlock* block) {
     /// Blocks are not in IR tree, use a custom visitor to traverse
     for (auto it : block->constantValue) {
         if (it.second->is<IR::Block>())
@@ -199,31 +211,40 @@ bool MtParsePsaArchitecture::preorder(const IR::ToplevelBlock* block) {
     return false;
 }
 
-bool MtParsePsaArchitecture::preorder(const IR::ExternBlock* block) {
+bool ParseMtPsaArchitecture::preorder(const IR::ExternBlock* block) {
     if (block->node->is<IR::Declaration>())
         structure->globals.push_back(block);
     return false;
 }
 
-bool MtParsePsaArchitecture::preorder(const IR::PackageBlock* block) {
-    auto pkg = block->getParameterValue("ingress");
-    if (auto ingress = pkg->to<IR::PackageBlock>()) {
-        auto parser = ingress->getParameterValue("ip")->to<IR::ParserBlock>();
-        auto pipeline = ingress->getParameterValue("ig")->to<IR::ControlBlock>();
-        auto deparser = ingress->getParameterValue("id")->to<IR::ControlBlock>();
+bool ParseMtPsaArchitecture::preorder(const IR::PackageBlock* block) {
+    if (structure->userProgram) {
+        auto parser = block->getParameterValue("pr")->to<IR::ParserBlock>();
+        auto pipeline = block->getParameterValue("pi")->to<IR::ControlBlock>();
+        auto deparser = block->getParameterValue("dp")->to<IR::ControlBlock>();
+
         structure->block_type.emplace(parser->container, std::make_pair(INGRESS, PARSER));
         structure->block_type.emplace(pipeline->container, std::make_pair(INGRESS, PIPELINE));
+        structure->non_pipeline_controls.emplace(deparser->container->name);
         structure->block_type.emplace(deparser->container, std::make_pair(INGRESS, DEPARSER));
-        structure->pipeline_controls.emplace(pipeline->container->name);
-        structure->non_pipeline_controls.emplace(deparser->container->name);
-    }
-    pkg = block->getParameterValue("egress");
-    if (auto egress = pkg->to<IR::PackageBlock>()) {
-        auto parser = egress->getParameterValue("ep")->to<IR::ParserBlock>();
-        auto deparser = egress->getParameterValue("ed")->to<IR::ControlBlock>();
-        structure->block_type.emplace(parser->container, std::make_pair(EGRESS, PARSER));
-        structure->block_type.emplace(deparser->container, std::make_pair(EGRESS, DEPARSER));
-        structure->non_pipeline_controls.emplace(deparser->container->name);
+    } else {
+        auto pkg = block->getParameterValue("ingress");
+        if (auto ingress = pkg->to<IR::PackageBlock>()) {
+            auto parser = ingress->getParameterValue("ip")->to<IR::ParserBlock>();
+            auto pipeline = ingress->getParameterValue("ig")->to<IR::ControlBlock>();
+            auto deparser = ingress->getParameterValue("id")->to<IR::ControlBlock>();
+            structure->block_type.emplace(parser->container, std::make_pair(INGRESS, PARSER));
+            structure->block_type.emplace(pipeline->container, std::make_pair(INGRESS, PIPELINE));
+            structure->block_type.emplace(deparser->container, std::make_pair(INGRESS, DEPARSER));
+            structure->pipeline_controls.emplace(pipeline->container->name);
+            structure->non_pipeline_controls.emplace(deparser->container->name);
+        }
+
+        auto egress_parser = block->getParameterValue("ep")->to<IR::ParserBlock>();
+        auto egress_deparser = block->getParameterValue("ed")->to<IR::ControlBlock>();
+        structure->block_type.emplace(egress_parser->container, std::make_pair(EGRESS, PARSER));
+        structure->block_type.emplace(egress_deparser->container, std::make_pair(EGRESS, DEPARSER));
+        structure->non_pipeline_controls.emplace(egress_deparser->container->name);
     }
     return false;
 }
@@ -420,14 +441,16 @@ void InspectMtPsaProgram::postorder(const IR::P4Control *c) {
 void MtPsaSwitchBackend::convert(const IR::ToplevelBlock* tlb) {
     CHECK_NULL(tlb);
     MtPsaProgramStructure structure(refMap, typeMap);
+    structure.userProgram = options.userProgram;
 
-    auto parsePsaArch = new MtParsePsaArchitecture(&structure);
+    auto parsePsaArch = new ParseMtPsaArchitecture(&structure);
     auto main = tlb->getMain();
     if (!main) return;
 
-    if (main->type->name != "MTPSA_Switch")
-        ::warning(ErrorType::WARN_INVALID, "%1%: the main package should be called MTPSA_Switch"
-                  "; are you using the wrong architecture?", main->type->name);
+    auto switchName = options.userProgram ? "MTPSA_User_Switch" : "MTPSA_Switch";
+    if (main->type->name != switchName)
+        ::warning(ErrorType::WARN_INVALID, "%1%: the main package should be called %2%"
+                  "; are you using the wrong architecture?", main->type->name, switchName);
 
     main->apply(*parsePsaArch);
 
