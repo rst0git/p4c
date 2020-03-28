@@ -17,9 +17,9 @@ class MtPsaSwitchOptions : public BMV2Options {
                     exit(0);
                     return false; },
                 "[MtPsaSwitch back-end] Lists exact name of all midend passes.\n");
-        registerOption("--user", "user_id",
-                [this](const char* arg) { userProgram = true; userProgramID = arg; return true; },
-                "[MtPsaSwitch back-end] Compile user program.\n");
+        registerOption("--user", nullptr,
+                       [this](const char*) { userProgram = true; return true; },
+                       "[MtPsaSwitch back-end] Compile user program.\n");
     }
 };
 

@@ -88,7 +88,6 @@ class CompilerOptions : public Util::Options {
     bool excludeBackendPasses = false;
 
     bool userProgram = false;
-    cstring userProgramID = nullptr;
 
     // Dump a JSON representation of the IR in the file
     cstring dumpJsonFile = nullptr;
