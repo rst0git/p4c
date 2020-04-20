@@ -1512,7 +1512,7 @@ class P4RuntimeEntriesConverter {
                 auto value = stringRepr(arg->expression->to<IR::BoolLiteral>(), width);
                 protoParam->set_value(*value);
             } else {
-                ::error("%1% unsupported argument expression", arg->expression);
+                // ::error("%1% unsupported argument expression", arg->expression);
                 continue;
             }
         }
