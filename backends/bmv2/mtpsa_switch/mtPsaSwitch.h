@@ -49,13 +49,19 @@ class MtPsaSwitchExpressionConverter : public ExpressionConverter {
      * if it is, false otherwise.
      */
     static bool isStandardMetadata(cstring ptName) {
-      return (!strcmp(ptName, "mtpsa_ingress_parser_input_metadata_t") ||
-        !strcmp(ptName, "mtpsa_egress_parser_input_metadata_t") ||
-        !strcmp(ptName, "mtpsa_ingress_input_metadata_t") ||
-        !strcmp(ptName, "mtpsa_ingress_output_metadata_t") ||
-        !strcmp(ptName, "mtpsa_egress_input_metadata_t") ||
-        !strcmp(ptName, "mtpsa_egress_deparser_input_metadata_t") ||
-        !strcmp(ptName, "mtpsa_egress_output_metadata_t"));
+        return (
+          !strcmp(ptName, "mtpsa_ingress_parser_input_metadata_t") ||
+          !strcmp(ptName, "mtpsa_egress_parser_input_metadata_t") ||
+          !strcmp(ptName, "mtpsa_ingress_input_metadata_t") ||
+          !strcmp(ptName, "mtpsa_ingress_output_metadata_t") ||
+          !strcmp(ptName, "mtpsa_egress_input_metadata_t") ||
+          !strcmp(ptName, "mtpsa_egress_deparser_input_metadata_t") ||
+          !strcmp(ptName, "mtpsa_egress_output_metadata_t") ||
+          // mtpsa_user metadata
+          !strcmp(ptName, "mtpsa_parser_input_metadata_t") ||
+          !strcmp(ptName, "mtpsa_input_metadata_t") ||
+          !strcmp(ptName, "mtpsa_output_metadata_t")
+        );
     }
 
     Util::IJson* convertParam(UNUSED const IR::Parameter* param, cstring fieldName) override {
