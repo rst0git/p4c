@@ -164,8 +164,7 @@ match_kind {
     selector /// Used for dynamic action selection via the ActionSelector extern
 }
 
-action send_to_port(inout mtpsa_output_metadata_t meta,
-                    in PortId_t port)
+action send_to_port(inout mtpsa_output_metadata_t meta, in PortId_t port)
 {
     meta.drop = false;
     meta.multicast_group = (MulticastGroup_t) 0;
