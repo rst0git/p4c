@@ -174,6 +174,10 @@ void MtPsaProgramStructure::createControls(ConversionContext* ctxt) {
     auto cvt = new BMV2::ControlConverter(ctxt, "ingress", true);
     auto ingress = pipelines.at("ingress");
     ingress->apply(*cvt);
+
+    cvt = new BMV2::ControlConverter(ctxt, "egress", true);
+    auto egress = pipelines.at("egress");
+    egress->apply(*cvt);
 }
 
 void MtPsaProgramStructure::createDeparsers(ConversionContext* ctxt) {
@@ -241,9 +245,12 @@ bool ParseMtPsaArchitecture::preorder(const IR::PackageBlock* block) {
         }
 
         auto egress_parser = block->getParameterValue("ep")->to<IR::ParserBlock>();
+        auto pipeline = block->getParameterValue("eg")->to<IR::ControlBlock>();
         auto egress_deparser = block->getParameterValue("ed")->to<IR::ControlBlock>();
         structure->block_type.emplace(egress_parser->container, std::make_pair(EGRESS, PARSER));
+        structure->block_type.emplace(pipeline->container, std::make_pair(EGRESS, PIPELINE));
         structure->block_type.emplace(egress_deparser->container, std::make_pair(EGRESS, DEPARSER));
+        structure->pipeline_controls.emplace(pipeline->container->name);
         structure->non_pipeline_controls.emplace(egress_deparser->container->name);
     }
     return false;
@@ -431,6 +438,8 @@ void InspectMtPsaProgram::postorder(const IR::P4Control *c) {
         auto info = pinfo->block_type.at(c);
         if (info.first == INGRESS && info.second == PIPELINE)
             pinfo->pipelines.emplace("ingress", c);
+        else if (info.first == EGRESS && info.second == PIPELINE)
+            pinfo->pipelines.emplace("egress", c);
         else if (info.first == INGRESS && info.second == DEPARSER)
             pinfo->deparsers.emplace("ingress", c);
         else if (info.first == EGRESS && info.second == DEPARSER)

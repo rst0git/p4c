@@ -399,6 +399,7 @@ package MTPSA_Switch<IH, IM, EH, EM, NM, CI2EM, CE2EM, RESUBM, RECIRCM> (
     IngressPipeline<IH, IM, NM, CI2EM, RESUBM, RECIRCM> ingress,
     PacketReplicationEngine pre,
     EgressParser<EH, EM, NM, CI2EM, CE2EM> ep,
+    Egress<EH, EM> eg,
     EgressDeparser<EH, EM, CE2EM, RECIRCM> ed,
     BufferingQueueingEngine bqe);
 
