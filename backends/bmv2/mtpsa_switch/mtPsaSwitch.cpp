@@ -175,9 +175,11 @@ void MtPsaProgramStructure::createControls(ConversionContext* ctxt) {
     auto ingress = pipelines.at("ingress");
     ingress->apply(*cvt);
 
-    cvt = new BMV2::ControlConverter(ctxt, "egress", true);
-    auto egress = pipelines.at("egress");
-    egress->apply(*cvt);
+    if (!userProgram) {
+      cvt = new BMV2::ControlConverter(ctxt, "egress", true);
+      auto egress = pipelines.at("egress");
+      egress->apply(*cvt);
+    }
 }
 
 void MtPsaProgramStructure::createDeparsers(ConversionContext* ctxt) {
