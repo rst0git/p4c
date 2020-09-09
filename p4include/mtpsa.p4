@@ -182,6 +182,7 @@ struct mtpsa_ingress_output_metadata_t {
   MulticastGroup_t         multicast_group;  // 0
   PortId_t                 egress_port;      // initial value is undefined
   bit<16>                  user_id;
+  bit<16>                  user_permissions;
 }
 
 struct mtpsa_egress_input_metadata_t {
