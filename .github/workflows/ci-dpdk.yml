@@ -21,6 +21,7 @@ jobs:
       LIBABIGAIL_VERSION: libabigail-1.8
       REF_GIT_TAG: v21.05
       RUN_TESTS: ${{ contains(matrix.config.checks, 'tests') }}
+      CTEST_PARALLEL_LEVEL: 4
     strategy:
       fail-fast: false
       matrix:
@@ -28,8 +29,6 @@ jobs:
           - os: ubuntu-latest
             compiler: gcc
             library: static
-    env:
-      CTEST_PARALLEL_LEVEL: 4
     steps:
     - uses: actions/checkout@v2
       with:
@@ -40,8 +39,22 @@ jobs:
       with:
         access_token: ${{ github.token }}
 
+    - name: Install Python Dependencies
+      run: |
+        pip3 install meson ninja
+        sudo apt install python3-pyelftools
+
+    - name: Checkout (DPDK)
+      uses: actions/checkout@v2
+      with:
+        repository: DPDK/dpdk
+        path: dpdk
+
     - name: Build (DPDK)
-      uses: DPDK/dpdk@v21.05
+      run: |
+        cd dpdk
+        meson -Dexamples=pipeline --werror build
+        ninja -C build
 
     - name: Build (Linux)
       run: |
