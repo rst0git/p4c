@@ -46,7 +46,8 @@ export P4C_PIP_PACKAGES="ipaddr \
                           ply==3.8 \
                           scapy==2.4.4"
 
-
+export DPDK_DEPS="meson \
+		  ninja-build"
 
 apt-get update
 apt-get install -y --no-install-recommends \
@@ -54,6 +55,7 @@ apt-get install -y --no-install-recommends \
   ${P4C_PYTHON3} \
   ${P4C_EBPF_DEPS} \
   ${P4C_RUNTIME_DEPS} \
+  ${DPDK_DEPS} \
   git
 
 # we want to use Python as the default so change the symlinks
@@ -122,6 +124,21 @@ if [ "$VALIDATION" == "ON" ]; then
 fi
 # ! ------  END VALIDATION -----------------------------------------------
 
+# ! ------  BEGIN P4C-DPDK REGRESSION ----------------------------------------
+function build_dpdk() {
+  apt-get install -y python3-pyelftools
+  git clone https://github.com/DPDK/dpdk.git dpdk
+  git fetch --all --tags
+  git checkout tags/v21.05 -b latest
+  cd dpdk
+  meson -Dexamples=pipeline --werror build
+  ninja -C build
+}
+
+if [ "$DPDK" == "ON" ]; then
+  build_dpdk
+fi
+# ! ------  END P4C-DPDK REGRESSION ------------------------------------------
 
 function build() {
   if [ -e build ]; then /bin/rm -rf build; fi

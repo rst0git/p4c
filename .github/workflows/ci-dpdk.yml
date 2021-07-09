@@ -39,30 +39,13 @@ jobs:
       with:
         access_token: ${{ github.token }}
 
-    - name: Install Python Dependencies
-      run: |
-        pip3 install meson ninja
-        sudo apt install python3-pyelftools
-
-    - name: Checkout (DPDK)
-      uses: actions/checkout@v2
-      with:
-        repository: DPDK/dpdk
-        path: dpdk
-
-    - name: Build (DPDK)
-      run: |
-        cd dpdk
-        meson -Dexamples=pipeline --werror build
-        ninja -C build
-
     - name: Build (Linux)
       run: |
         tools/start_ccache
-        docker build --network ccache_network -t p4c --build-arg IMAGE_TYPE=test --build-arg ENABLE_UNIFIED_COMPILATION=ON --build-arg ENABLE_GMP=ON .
+        docker build --network ccache_network -t p4c --build-arg IMAGE_TYPE=test --build-arg ENABLE_UNIFIED_COMPILATION=ON --build-arg ENABLE_GMP=ON --build-arg DPDK=ON .
 
       # run with sudo (...) --privileged
     - name: Run tests (Linux)
       run: |
-        sudo docker run --privileged -w /p4c/build -e $CTEST_PARALLEL_LEVEL p4c ctest --output-on-failure --schedule-random
+        sudo docker run --privileged -w /p4c/build -e $CTEST_PARALLEL_LEVEL p4c ctest -R dpdk --output-on-failure --schedule-random
 
