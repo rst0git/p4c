@@ -47,7 +47,7 @@ export P4C_PIP_PACKAGES="ipaddr \
                           scapy==2.4.4"
 
 export DPDK_DEPS="meson \
-		  ninja-build"
+		  ninja"
 
 apt-get update
 apt-get install -y --no-install-recommends \
@@ -64,6 +64,7 @@ ln -sf /usr/bin/pip3 /usr/bin/pip
 
 pip3 install wheel
 pip3 install $P4C_PIP_PACKAGES
+pipe3 install $DPDK_DEPS
 
 # Build libbpf for eBPF tests.
 cd /p4c
@@ -131,7 +132,7 @@ function build_dpdk() {
   cd /dpdk
   git fetch --all --tags
   git checkout tags/v21.05 -b latest
-  mkdir build
+  mkdir -p build
   meson -Dexamples=pipeline --werror build
   ninja -C build
   cd -
