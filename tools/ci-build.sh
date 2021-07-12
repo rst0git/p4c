@@ -55,7 +55,6 @@ apt-get install -y --no-install-recommends \
   ${P4C_PYTHON3} \
   ${P4C_EBPF_DEPS} \
   ${P4C_RUNTIME_DEPS} \
-  ${DPDK_DEPS} \
   git
 
 # we want to use Python as the default so change the symlinks
