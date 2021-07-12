@@ -46,7 +46,7 @@ export P4C_PIP_PACKAGES="ipaddr \
                           ply==3.8 \
                           scapy==2.4.4"
 
-export DPDK_DEPS="meson \
+export DPDK_DEPS="meson==0.54.3 \
 		  ninja"
 
 apt-get update
