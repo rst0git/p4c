@@ -63,7 +63,7 @@ ln -sf /usr/bin/pip3 /usr/bin/pip
 
 pip3 install wheel
 pip3 install $P4C_PIP_PACKAGES
-pipe3 install $DPDK_DEPS
+pip3 install $DPDK_DEPS
 
 # Build libbpf for eBPF tests.
 cd /p4c
