@@ -131,6 +131,7 @@ function build_dpdk() {
   cd /dpdk
   git fetch --all --tags
   git checkout tags/v21.05 -b latest
+  mkdir build
   meson -Dexamples=pipeline --werror build
   ninja -C build
   cd -
