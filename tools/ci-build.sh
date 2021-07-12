@@ -128,9 +128,9 @@ fi
 function build_dpdk() {
   apt-get install -y python3-pyelftools
   git clone https://github.com/DPDK/dpdk.git dpdk
+  cd dpdk
   git fetch --all --tags
   git checkout tags/v21.05 -b latest
-  cd dpdk
   meson -Dexamples=pipeline --werror build
   ninja -C build
 }
