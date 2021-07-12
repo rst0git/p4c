@@ -131,11 +131,13 @@ function build_dpdk() {
   cd dpdk
   git fetch --all --tags
   git checkout tags/v21.05 -b latest
+  pwd
   meson -Dexamples=pipeline --werror build
   ninja -C build
 }
 
 if [ "$DPDK" == "ON" ]; then
+  pwd
   build_dpdk
 fi
 # ! ------  END P4C-DPDK REGRESSION ------------------------------------------
