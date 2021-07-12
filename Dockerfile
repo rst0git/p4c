@@ -17,6 +17,8 @@ ARG VALIDATION=OFF
 # This creates a release build that includes link time optimization and links
 # all libraries statically.
 ARG BUILD_STATIC_RELEASE=OFF
+# Build dpdk app for p4c-dpdk testing
+ARG DPDK=OFF
 
 # Delegate the build to tools/ci-build.
 COPY . /p4c/
