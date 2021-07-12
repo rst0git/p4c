@@ -127,17 +127,16 @@ fi
 # ! ------  BEGIN P4C-DPDK REGRESSION ----------------------------------------
 function build_dpdk() {
   apt-get install -y python3-pyelftools
-  git clone https://github.com/DPDK/dpdk.git dpdk
-  cd dpdk
+  git clone https://github.com/DPDK/dpdk.git /dpdk
+  cd /dpdk
   git fetch --all --tags
   git checkout tags/v21.05 -b latest
-  pwd
   meson -Dexamples=pipeline --werror build
   ninja -C build
+  cd -
 }
 
 if [ "$DPDK" == "ON" ]; then
-  pwd
   build_dpdk
 fi
 # ! ------  END P4C-DPDK REGRESSION ------------------------------------------
