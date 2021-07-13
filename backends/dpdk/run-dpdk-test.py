@@ -236,6 +236,10 @@ def process_file(options, argv):
         dpdk_args = ["/dpdk/build/examples/dpdk-pipeline"]
         result = run_timeout(options, dpdk_args, timeout, stderr)
 
+        if result != SUCCESS:
+            print("Error loading dpdk pipeline")
+            print("".join(open(stderr).readlines()))
+
     if options.cleanupTmp:
         if options.verbose:
             print("Removing", tmpdir)
