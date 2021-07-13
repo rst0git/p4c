@@ -231,6 +231,11 @@ def process_file(options, argv):
     if result == SUCCESS:
         result = check_generated_files(options, tmpdir, expected_dirname)
 
+    # validate spec file in dpdk app
+    if result == SUCCESS:
+        dpdk_args = ["/dpdk/build/examples/dpdk-pipeline"]
+        result = run_timeout(options, dpdk_args, timeout, stderr)
+
     if options.cleanupTmp:
         if options.verbose:
             print("Removing", tmpdir)
