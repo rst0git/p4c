@@ -2,9 +2,9 @@ name: "test-p4c-dpdk"
 
 on:
   push:
-    branches: [ main ]
+    branches: [ setup-dpdk-regression ]
   pull_request:
-    branches: [ main ]
+    branches: [ setup-dpdk-regression ]
 
 jobs:
   # Build dpdk and test p4c-dpdk on Ubuntu 18.04

@@ -14,6 +14,7 @@ export P4C_DEPS="bison \
              curl \
              flex \
              g++ \
+	     libnuma-dev \
              libboost-dev \
              libboost-graph-dev \
              libboost-iostreams1.58-dev \
