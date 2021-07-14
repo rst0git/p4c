@@ -241,8 +241,7 @@ def process_file(options, argv):
     if result == SUCCESS:
         # dpdk-pipeline must run with sudo.
         generate_cli(tmpdir, cli)
-        subprocess.Popen(["sudo", "sleep", "1"])
-        dpdk_args = ["sudo", "-S", "/dpdk/build/examples/dpdk-pipeline", "-s", cli]
+        dpdk_args = ["/dpdk/build/examples/dpdk-pipeline", "-s", cli]
         result = run_timeout(options, dpdk_args, timeout, stderr)
 
         if result != SUCCESS:
