@@ -50,10 +50,10 @@ jobs:
 
     - name: Run dpdk
       run: |
-        sudo docker run --cap-add ALL --device=/dev/hugepages:/dev/hugepages --privileged -w /p4c/build -e $CTEST_PARALLEL_LEVEL p4c /dpdk/build/examples/dpdk-pipeline
+        sudo docker run -v /sys/bus/pci/drivers:/sys/bus/pci/drivers -v /sys/kernel/mm/hugepages:/sys/kernel/mm/hugepages -v /sys/devices/system/node:/sys/devices/system/node -v /dev:/dev -w /p4c/build -e $CTEST_PARALLEL_LEVEL p4c /dpdk/build/examples/dpdk-pipeline
 
       # run with sudo (...) --privileged
     - name: Run tests (Linux)
       run: |
-        sudo docker run --cap-add ALL --device=/dev/hugepages:/dev/hugepages --privileged -w /p4c/build -e $CTEST_PARALLEL_LEVEL p4c ctest -R dpdk -V --output-on-failure --schedule-random
+        sudo docker run -v /sys/bus/pci/drivers:/sys/bus/pci/drivers -v /sys/kernel/mm/hugepages:/sys/kernel/mm/hugepages -v /sys/devices/system/node:/sys/devices/system/node -v /dev:/dev -w /p4c/build -e $CTEST_PARALLEL_LEVEL p4c ctest -R dpdk -V --output-on-failure --schedule-random
 
