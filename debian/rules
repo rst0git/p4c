@@ -3,14 +3,25 @@
 DH_VERBOSE = 1
 
 %:
-	dh $@ --with python2,python3
+	dh $@
 
 override_dh_auto_configure:
-	dh_auto_configure -- -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_INSTALL_PREFIX=/usr
+	dh_auto_configure --builddirectory=build/ -- \
+		-DCMAKE_BUILD_TYPE=RELEASE \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DENABLE_BMV2=ON \
+		-DENABLE_EBPF=ON \
+		-DENABLE_UBPF=ON \
+		-DENABLE_DPDK=ON \
+		-DENABLE_P4C_GRAPHS=ON \
+		-DENABLE_P4TEST=ON \
+		-DENABLE_DOCS=OFF \
+		-DENABLE_GC=ON \
+		-DENABLE_GTESTS=OFF \
+		-DENABLE_PROTOBUF_STATIC=ON \
+		-DENABLE_MULTITHREAD=OFF \
+		-DENABLE_GMP=ON
+
 
 override_dh_auto_install:
-	dh_auto_install -- DESTDIR=$(CURDIR)/ install
-
-# dwz reports: elf_update failed
-override_dh_dwz:
-	dh_dwz -Xp4c-bm2-psa -Xp4c-bm2-ss -Xp4c-dpdk -Xp4c-ebpf -Xp4c-graphs -Xp4c-ubpf -X p4test
+	dh_auto_install --builddirectory=build/ -- DESTDIR=$(CURDIR)/ install
