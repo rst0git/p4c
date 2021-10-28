@@ -583,9 +583,7 @@ void MtPsaSwitchBackend::convert(const IR::ToplevelBlock* tlb) {
         new P4::SimplifyControlFlow(refMap, typeMap),
         new P4::RemoveAllUnusedDeclarations(refMap),
         evaluator,
-        new VisitFunctor([this, evaluator, structure]() {
-            toplevel = evaluator->getToplevelBlock();
-        }),
+        [this, evaluator, structure]() { toplevel = evaluator->getToplevelBlock(); },
     };
     auto hook = options.getDebugHook();
     simplify.addDebugHook(hook);
