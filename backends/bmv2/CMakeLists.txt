@@ -19,6 +19,8 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/simple_switch/version.h.cmake"
   "${CMAKE_CURRENT_BINARY_DIR}/simple_switch/version.h" @ONLY)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/psa_switch/version.h.cmake"
   "${CMAKE_CURRENT_BINARY_DIR}/psa_switch/version.h" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/mtpsa_switch/version.h.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/mtpsa_switch/version.h" @ONLY)
 
 # sources for backend executable
 set (BMV2_SIMPLE_SWITCH_SRCS
@@ -41,6 +43,16 @@ set (BMV2_PSA_SWITCH_SRCS
     psa_switch/options.h
     )
 add_cpplint_files (${CMAKE_CURRENT_SOURCE_DIR} "${BMV2_PSA_SWITCH_SRCS}")
+
+set (BMV2_MTPSA_SWITCH_SRCS
+    mtpsa_switch/main.cpp
+    mtpsa_switch/midend.cpp
+    mtpsa_switch/midend.h
+    mtpsa_switch/mtPsaSwitch.cpp
+    mtpsa_switch/mtPsaSwitch.h
+    mtpsa_switch/options.h
+    )
+add_cpplint_files (${CMAKE_CURRENT_SOURCE_DIR} "${BMV2_MTPSA_SWITCH_SRCS}")
 
 set (BMV2_BACKEND_COMMON_SRCS
   common/JsonObjects.cpp
@@ -98,6 +110,11 @@ add_executable(p4c-bm2-psa ${BMV2_PSA_SWITCH_SRCS})
 target_link_libraries (p4c-bm2-psa bmv2backend ${P4C_LIBRARIES} ${P4C_LIB_DEPS})
 install(TARGETS p4c-bm2-psa RUNTIME DESTINATION ${P4C_RUNTIME_OUTPUT_DIRECTORY})
 
+build_unified(BMV2_MTPSA_SWITCH_SRCS)
+add_executable(p4c-bm2-mtpsa ${BMV2_MTPSA_SWITCH_SRCS})
+target_link_libraries (p4c-bm2-mtpsa bmv2backend ${P4C_LIBRARIES} ${P4C_LIB_DEPS})
+install(TARGETS p4c-bm2-mtpsa RUNTIME DESTINATION ${P4C_RUNTIME_OUTPUT_DIRECTORY})
+
 file(RELATIVE_PATH
     CURRENT_BINARY_DIR_PATH_REL
     ${P4C_BINARY_DIR}
@@ -116,6 +133,7 @@ file(RELATIVE_PATH
 add_custom_target(linkbmv2
   COMMAND ${CMAKE_COMMAND} -E create_symlink ${CURRENT_BINARY_DIR_PATH_REL}/p4c-bm2-ss ${P4C_BINARY_DIR}/p4c-bm2-ss
   COMMAND ${CMAKE_COMMAND} -E create_symlink ${CURRENT_BINARY_DIR_PATH_REL}/p4c-bm2-psa ${P4C_BINARY_DIR}/p4c-bm2-psa
+  COMMAND ${CMAKE_COMMAND} -E create_symlink ${CURRENT_BINARY_DIR_PATH_REL}/p4c-bm2-mtpsa ${P4C_BINARY_DIR}/p4c-bm2-mtpsa
   COMMAND ${CMAKE_COMMAND} -E create_symlink ${P4C_BINARY_DIR_PATH_REL}/p4include ${CMAKE_CURRENT_BINARY_DIR}/p4include
   COMMAND ${CMAKE_COMMAND} -E create_symlink ${P4C_BINARY_DIR_PATH_REL}/p4_14include ${CMAKE_CURRENT_BINARY_DIR}/p4_14include
   )

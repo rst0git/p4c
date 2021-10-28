@@ -51,7 +51,11 @@ class CompilerOptions : public ParserOptions {
     // Strings matched against pass names that should be excluded from backend
     // passes.
     std::vector<cstring> passesToExcludeBackend;
-    // Dump a JSON representation of the IR in the file.
+
+    // MTPSA flag to indicate a user program
+    bool userProgram = false;
+
+    // Dump a JSON representation of the IR in the file
     cstring dumpJsonFile = nullptr;
     // Dump and undump the IR tree.
     bool debugJson = false;
