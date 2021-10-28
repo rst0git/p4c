@@ -225,30 +225,131 @@ bool ParseMtPsaArchitecture::preorder(const IR::ExternBlock* block) {
 
 bool ParseMtPsaArchitecture::preorder(const IR::PackageBlock* block) {
     if (structure->userProgram) {
-        auto parser = block->getParameterValue("pr")->to<IR::ParserBlock>();
-        auto pipeline = block->getParameterValue("pi")->to<IR::ControlBlock>();
-        auto deparser = block->getParameterValue("dp")->to<IR::ControlBlock>();
+        /* User Pipeline */
+
+        auto tmp = block->findParameterValue("pr");
+        if (tmp == nullptr) {
+            modelError("user program %1% has no parameter named 'pr'", block);
+            return false;
+        }
+        auto parser = tmp->to<IR::ParserBlock>();
+        if (parser == nullptr) {
+            modelError("%1%: 'pr' argument of user program should be bound to a parser", block);
+            return false;
+        }
+
+        tmp = block->findParameterValue("pi");
+        if (tmp == nullptr) {
+            modelError("user program %1% has no parameter named 'pi'", block);
+            return false;
+        }
+        auto pipeline = tmp->to<IR::ParserBlock>();
+        if (pipeline == nullptr) {
+            modelError("%1%: 'pi' argument of user program should be bound to a pipeline", block);
+            return false;
+        }
+
+        tmp = block->findParameterValue("dp");
+        if (tmp == nullptr) {
+            modelError("user program %1% has no parameter named 'dp'", block);
+            return false;
+        }
+        auto deparser = tmp->to<IR::ParserBlock>();
+        if (deparser == nullptr) {
+            modelError("%1%: 'dp' argument of user program should be bound to a control", block);
+            return false;
+        }
 
         structure->block_type.emplace(parser->container, std::make_pair(INGRESS, PARSER));
         structure->block_type.emplace(pipeline->container, std::make_pair(INGRESS, PIPELINE));
         structure->non_pipeline_controls.emplace(deparser->container->name);
         structure->block_type.emplace(deparser->container, std::make_pair(INGRESS, DEPARSER));
     } else {
-        auto pkg = block->getParameterValue("ingress");
+        /* Superuser Pipeline */
+
+        auto pkg = block->findParameterValue("ingress");
+        if (pkg == nullptr) {
+            modelError("Package %1% has no parameter named 'ingress'", block);
+            return false;
+        }
+
         if (auto ingress = pkg->to<IR::PackageBlock>()) {
-            auto parser = ingress->getParameterValue("ip")->to<IR::ParserBlock>();
-            auto pipeline = ingress->getParameterValue("ig")->to<IR::ControlBlock>();
-            auto deparser = ingress->getParameterValue("id")->to<IR::ControlBlock>();
+            auto tmp = ingress->findParameterValue("ip");
+            if (tmp == nullptr) {
+                modelError("'ingress' package %1% has no parameter named 'ip'", block);
+                return false;
+            }
+            auto parser = tmp->to<IR::ParserBlock>();
+            if (parser == nullptr) {
+                modelError("%1%: 'ip' argument of 'ingress' should be bound to a parser", block);
+                return false;
+            }
+
+            tmp = ingress->findParameterValue("ig");
+            if (tmp == nullptr) {
+                modelError("'ingress' package %1% has no parameter named 'ig'", block);
+                return false;
+            }
+            auto pipeline = tmp->to<IR::ControlBlock>();
+            if (pipeline == nullptr) {
+                modelError("%1%: 'ig' argument of 'ingress' should be bound to a control", block);
+                return false;
+            }
+
+            tmp = ingress->findParameterValue("id");
+            if (tmp == nullptr) {
+                modelError("'ingress' package %1% has no parameter named 'id'", block);
+                return false;
+            }
+            auto deparser = tmp->to<IR::ControlBlock>();
+            if (deparser == nullptr) {
+                modelError("'%1%: id' argument of 'ingress' should be bound to a control", block);
+                return false;
+            }
+
             structure->block_type.emplace(parser->container, std::make_pair(INGRESS, PARSER));
             structure->block_type.emplace(pipeline->container, std::make_pair(INGRESS, PIPELINE));
             structure->block_type.emplace(deparser->container, std::make_pair(INGRESS, DEPARSER));
             structure->pipeline_controls.emplace(pipeline->container->name);
             structure->non_pipeline_controls.emplace(deparser->container->name);
+        } else {
+            modelError("'ingress' %1% is not bound to a package", pkg);
+            return false;
         }
 
-        auto egress_parser = block->getParameterValue("ep")->to<IR::ParserBlock>();
-        auto pipeline = block->getParameterValue("eg")->to<IR::ControlBlock>();
-        auto egress_deparser = block->getParameterValue("ed")->to<IR::ControlBlock>();
+        auto tmp = block->findParameterValue("ep");
+        if (tmp == nullptr) {
+            modelError("'egress' package %1% has no parameter named 'ep'", block);
+            return false;
+        }
+        auto egress_parser = tmp->to<IR::ParserBlock>();
+        if (egress_parser == nullptr) {
+            modelError("%1%: 'ep' argument of 'egress' should be bound to a praser", block);
+            return false;
+        }
+
+        tmp = block->findParameterValue("eg");
+        if (tmp == nullptr) {
+            modelError("'egress' package %1% has no parameter named 'eg'", block);
+            return false;
+        }
+        auto pipeline = tmp->to<IR::ControlBlock>();
+        if (pipeline == nullptr) {
+            modelError("%1%: 'ep' argument of 'egress' should be bound to a control", block);
+            return false;
+        }
+
+        tmp = block->findParameterValue("ed");
+        if (tmp == nullptr) {
+            modelError("'egress' package %1% has no parameter named 'ed'", block);
+            return false;
+        }
+        auto egress_deparser = tmp->to<IR::ControlBlock>();
+        if (egress_deparser == nullptr) {
+            modelError("%1%: 'ed' argument of 'egress' should be bound to a control", block);
+            return false;
+        }
+
         structure->block_type.emplace(egress_parser->container, std::make_pair(EGRESS, PARSER));
         structure->block_type.emplace(pipeline->container, std::make_pair(EGRESS, PIPELINE));
         structure->block_type.emplace(egress_deparser->container, std::make_pair(EGRESS, DEPARSER));

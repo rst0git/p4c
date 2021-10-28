@@ -32,8 +32,9 @@ class MtPsaSwitchExpressionConverter : public ExpressionConverter {
     BMV2::ExpressionConverter(refMap, typeMap, structure, scalarsName) { }
 
     void modelError(const char* format, const cstring field) {
-      ::error(format, field);
-      ::error("Invalid metadata parameter value");
+      ::error(ErrorType::ERR_MODEL,
+              (cstring(format) +
+               "\nInvalid metadata parameter value for PSA").c_str(), field);
     }
 
     /**
@@ -177,6 +178,12 @@ class ParseMtPsaArchitecture : public Inspector {
  public:
     explicit ParseMtPsaArchitecture(MtPsaProgramStructure* structure) :
         structure(structure) { CHECK_NULL(structure); }
+
+    void modelError(const char *format, const IR::INode *node) {
+      ::error(ErrorType::ERR_MODEL,
+              (cstring(format) + "Are you using an up-to-date 'mtpsa.p4'?").c_str(),
+              node->getNode());
+    }
 
     bool preorder(const IR::ToplevelBlock* block) override;
     bool preorder(const IR::PackageBlock* block) override;
