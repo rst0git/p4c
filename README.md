@@ -4,6 +4,30 @@
 
 # p4c
 
+This repository is a fork from https://github.com/p4lang/p4c
+
+The modified source code files that implement support for MTPSA are listed below:
+
+```
+backends/bmv2/CMakeLists.txt               |   17 ++
+backends/bmv2/mtpsa_switch/main.cpp        |  122 ++++++++++++
+backends/bmv2/mtpsa_switch/midend.cpp      |  153 +++++++++++++++
+backends/bmv2/mtpsa_switch/midend.h        |   20 ++
+backends/bmv2/mtpsa_switch/mtPsaSwitch.cpp | 1049 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+backends/bmv2/mtpsa_switch/mtPsaSwitch.h   |  270 ++++++++++++++++++++++++++
+backends/bmv2/mtpsa_switch/options.h       |   30 +++
+backends/bmv2/mtpsa_switch/version.h.cmake |   22 +++
+backends/bmv2/psa_switch/psaSwitch.cpp     |   51 ++++-
+control-plane/p4RuntimeSerializer.cpp      |    2 +-
+frontends/common/options.h                 |    2 +
+ir/pass_manager.h                          |    7 +-
+p4include/mtpsa.p4                         |  409 +++++++++++++++++++++++++++++++++++++++
+p4include/mtpsa_user.p4                    |  304 +++++++++++++++++++++++++++++
+
+14 files changed, 2453 insertions(+), 5 deletions(-)
+```
+
+
 p4c is a reference compiler for the P4 programming language.
 It supports both P4-14 and P4-16; you can find more information about P4
 [here](http://p4.org) and the specifications for both versions of the language
