@@ -3,7 +3,7 @@ Section: devel
 Priority: optional
 Maintainer: Radostin Stoyanov <radostin@stoyanov.io>
 Build-Depends:
-    debhelper (>= 9),
+    debhelper (>= 12),
     bison,
     cmake,
     flex,
@@ -45,8 +45,8 @@ Build-Depends:
     libthrift-dev,
     python3-thrift,
     thrift-compiler,
-    p4lang-bmv2,
-Standards-Version: 4.5.1.0
+    p4lang-bmv2
+Standards-Version: 4.1.5
 Rules-Requires-Root: no
 Homepage: https://github.com/p4lang/p4c
 Vcs-Git: https://github.com/p4lang/p4c
@@ -91,6 +91,6 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
     libthrift-dev,
     python3-thrift,
     thrift-compiler,
-    p4lang-bmv2,
+    p4lang-bmv2
 Description: P4 language compiler
  A reference compiler for the P4 programming language.
