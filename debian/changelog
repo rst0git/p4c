@@ -1,3 +1,10 @@
+p4lang-p4c (1.2.2-063bf646b) bullseye; urgency=medium
+
+  * Update to commit 063bf646b
+  * Add gfortran-10 dependency needed by libopenmpi-dev
+
+ -- Radostin Stoyanov <radostin@stoyanov.io>  Mon, 01 Nov 2021 03:09:38 +0000
+
 p4lang-p4c (1.2.2-7169708) bullseye; urgency=medium
 
   * Update to commit 7169708
