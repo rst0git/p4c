@@ -7,24 +7,37 @@ if [[ ! -x $BREW ]]; then
 fi
 
 $BREW update
-$BREW install autoconf automake bdw-gc bison boost ccache cmake git \
-      libtool openssl pkg-config python
-$BREW install gmp --c++11
-
-# Install specific version of Protobuf, since newer versions break compatibility
-wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protobuf-all-3.6.1.tar.gz
-tar xfz protobuf-all-3.6.1.tar.gz
-cd protobuf-3.6.1
-./configure
-make
-sudo make install
-cd ..
-rm -rf protobuf-3.6.1
+$BREW install \
+    autoconf \
+    automake \
+    bison \
+    boost \
+    ccache \
+    cmake \
+    git \
+    libatomic_ops \
+    libtool \
+    openssl \
+    pkg-config \
+    protobuf \
+    llvm \
+    python \
+    doxygen \
+    gmp
 
 # Prefer Homebrew's bison over the macOS-provided version
 $BREW link --force bison
 echo 'export PATH="/usr/local/opt/bison/bin:$PATH"' >> ~/.bash_profile
 export PATH="/usr/local/opt/bison/bin:$PATH"
+
+git clone --depth=1 -b v8.2.0 https://github.com/ivmai/bdwgc
+cd bdwgc
+./autogen.sh
+./configure \
+    --prefix=/usr/local \
+    --enable-cplusplus
+make
+sudo make install
 
 # install pip and required pip packages
 # curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py

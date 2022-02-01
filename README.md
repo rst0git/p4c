@@ -321,9 +321,9 @@ Installing on macOS:
   brew install autoconf automake libtool bdw-gc boost bison pkg-config
   ```
 
-  Install GMP built in C++11 mode:
+  Install GMP:
   ```
-  brew install gmp --c++11
+  brew install gmp
   ```
 
   By default, Homebrew doesn't link programs into `/usr/local/bin` if
