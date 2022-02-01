@@ -75,7 +75,18 @@ jobs:
           # which produces a unified build.
           # On MacOS we have noticed problems with the C++
           # garbage-collector, so we disable it
-          ./bootstrap.sh -DENABLE_GC=OFF -DCMAKE_BUILD_TYPE=RELEASE -DENABLE_UNIFIED_COMPILATION=${{matrix.unified}} -DENABLE_GMP=${{ matrix.enable_gmp }} && cd build && make -j2
+          ./bootstrap.sh \
+            -DENABLE_BMV2=OFF \
+            -DENABLE_EBPF=OFF \
+            -DENABLE_UBPF=OFF \
+            -DENABLE_DPDK=OFF \
+            -DCMAKE_BUILD_TYPE=RELEASE \
+            -DENABLE_UNIFIED_COMPILATION=${{matrix.unified}} \
+            -DENABLE_GMP=${{ matrix.enable_gmp }} \
+          && cd build && make V=1 VERBOSE=1
+      env:
+        GC_RETRY_SIGNALS: 1
+        YYDEBUG: 1
 
     - name: Run tests (MacOS)
       run: |

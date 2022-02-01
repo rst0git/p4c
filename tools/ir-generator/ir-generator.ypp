@@ -27,6 +27,11 @@ limitations under the License.
 #include <cerrno>
 #include <vector>
 
+#define GC_DEBUG 1
+#define GC_THREADS 1
+
+#include <gc.h>
+
 #include "lib/cstring.h"
 #include "lib/stringref.h"
 #include "lib/source_file.h"
@@ -419,16 +424,26 @@ IrDefinitions *parse(char** files, int count) {
     if (const char *p = getenv("YYDEBUG"))
         yydebug = atoi(p);
 #endif
+
+#if HAVE_LIBGC
+    GC_INIT();
+#endif
+
     if (count <= 0) {
         ::error(ErrorType::ERR_EXPECTED, "No input files specified");
         errors = 1; }
 
     for (int i = 0; i < count; i++) {
         if (FILE *fp = fopen(files[i], "r")) {
+            std::cout << ">>>> mapLine" << std::endl;
             sources->mapLine(files[i], 1);
+            std::cout << ">>>> yyrestart" << std::endl;
             yyrestart(fp);
+            std::cout << ">>>> BEGIN(NORMAL)" << std::endl;
             BEGIN(NORMAL);
+            std::cout << ">>>> yyparse" << std::endl;
             errors |= yyparse();
+            std::cout << ">>>> fclose" << std::endl;
             fclose(fp);
             if (errors & 2) {
                 error(ErrorType::ERR_OVERLIMIT, "out of memory");
