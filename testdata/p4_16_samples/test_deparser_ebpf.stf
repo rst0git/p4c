@@ -1,0 +1,2 @@
+packet 0 ffffffffffffaabbccddeeff08004500001400010000400096d50a14c9f008080808
+expect 0 ffffffffffffaabbccddeeff9000

@@ -33,9 +33,10 @@ bool EBPFProgram::build() {
         ::warning(ErrorType::WARN_INVALID, "%1%: the main ebpf package should be called ebpfFilter"
                   "; are you using the wrong architecture?", pack->type->name);
 
-    if (pack->getConstructorParameters()->size() != 2) {
+    auto nparam = pack->getConstructorParameters()->size();
+    if (nparam != 2 && nparam != 3) {
         ::error(ErrorType::ERR_EXPECTED,
-                "Expected toplevel package %1% to have 2 parameters", pack->type);
+                "Expected toplevel package %1% to have 2 or 3 parameters", pack->type);
         return false;
     }
 
