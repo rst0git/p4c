@@ -206,6 +206,20 @@ inline std::ostream& operator<<(std::ostream& out, const P4::Token& t) {
 %token<Token>      QUESTION "?"
 %token<Token>      DOT "."
 %token<Token>      ASSIGN "="
+%token<Token>      ASSIGN_PLUS "+="
+%token<Token>      ASSIGN_MINUS "-="
+%token<Token>      ASSIGN_MUL "*="
+%token<Token>      ASSIGN_DIV "/="
+%token<Token>      ASSIGN_MOD "%="
+%token<Token>      ASSIGN_BIT_AND "&="
+%token<Token>      ASSIGN_BIT_OR "|="
+%token<Token>      ASSIGN_AND "&&="
+%token<Token>      ASSIGN_OR "||="
+%token<Token>      ASSIGN_XOR "^="
+%token<Token>      ASSIGN_SHL "<<="
+%token<Token>      ASSIGN_SHR ">>="
+%token<Token>      ASSIGN_PLUS_SAT "|+|="
+%token<Token>      ASSIGN_MINUS_SAT "|-|="
 %token<Token>      SEMICOLON ";"
 %token<Token>      AT "@"
 %token<Token>      PP "++"
@@ -617,6 +631,21 @@ annotationToken
     | "="              { $$ = $1; }
     | ";"              { $$ = $1; }
     | "@"              { $$ = $1; }
+
+    | "+="             { $$ = $1; }
+    | "-="             { $$ = $1; }
+    | "*="             { $$ = $1; }
+    | "/="             { $$ = $1; }
+    | "%="             { $$ = $1; }
+    | "&="             { $$ = $1; }
+    | "|="             { $$ = $1; }
+    | "&&="            { $$ = $1; }
+    | "||="            { $$ = $1; }
+    | "^="             { $$ = $1; }
+    | "<<="            { $$ = $1; }
+    | ">>="            { $$ = $1; }
+    | "|+|="           { $$ = $1; }
+    | "|-|="           { $$ = $1; }
     ;
 
 kvList

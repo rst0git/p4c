@@ -301,6 +301,21 @@ using Parser = P4::P4Parser;
 ";"     { BEGIN(driver.saveState); driver.template_args = false; return makeToken(SEMICOLON); }
 "@"     { BEGIN(driver.saveState); driver.template_args = false; return makeToken(AT); }
 
+"+="    { BEGIN(driver.saveState); driver.template_args = false; return makeToken(ASSIGN_PLUS); }
+"-="    { BEGIN(driver.saveState); driver.template_args = false; return makeToken(ASSIGN_MINUS); }
+"*="    { BEGIN(driver.saveState); driver.template_args = false; return makeToken(ASSIGN_MUL); }
+"/="    { BEGIN(driver.saveState); driver.template_args = false; return makeToken(ASSIGN_DIV); }
+"%="    { BEGIN(driver.saveState); driver.template_args = false; return makeToken(ASSIGN_MOD); }
+"&="    { BEGIN(driver.saveState); driver.template_args = false; return makeToken(ASSIGN_BIT_AND); }
+"|="    { BEGIN(driver.saveState); driver.template_args = false; return makeToken(ASSIGN_BIT_OR); }
+"&&="   { BEGIN(driver.saveState); driver.template_args = false; return makeToken(ASSIGN_AND); }
+"||="   { BEGIN(driver.saveState); driver.template_args = false; return makeToken(ASSIGN_OR); }
+"^="    { BEGIN(driver.saveState); driver.template_args = false; return makeToken(ASSIGN_XOR); }
+"<<="   { BEGIN(driver.saveState); driver.template_args = false; return makeToken(ASSIGN_SHL); }
+">>="   { BEGIN(driver.saveState); driver.template_args = false; return makeToken(ASSIGN_SHR); }
+"|+|="  { BEGIN(driver.saveState); driver.template_args = false; return makeToken(ASSIGN_PLUS_SAT); }
+"|-|="  { BEGIN(driver.saveState); driver.template_args = false; return makeToken(ASSIGN_MINUS_SAT); }
+
 <*>.|\n        { return makeToken(UNEXPECTED_TOKEN); }
 
 %%
