@@ -140,7 +140,7 @@ jobs:
     - name: Run tests (Ubuntu 18.04)
       run: |
         sudo -E docker run --privileged -w /p4c/build -e $CTEST_PARALLEL_LEVEL p4c ctest --output-on-failure --schedule-random
-  
+
   # Build and test p4c on Fedora.
   test-fedora-linux:
     strategy:
@@ -203,6 +203,9 @@ jobs:
       run: |
            tools/install_mac_deps.sh
            echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
+
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
 
     - name: Build (MacOS)
       run: |
