@@ -6,6 +6,7 @@ on:
     - main
     paths:
     - 'Version.txt'
+    - '.github/workflows/ci-release.yml'
 
 # Cancel any preceding run on the pull request.
 concurrency:
@@ -14,7 +15,7 @@ concurrency:
 
 jobs:
   build:
-    if: ${{ github.repository == 'p4lang/p4c' }}
+    if: ${{ github.repository == 'rst0git/p4c' }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -27,7 +28,20 @@ jobs:
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "TAG=$TAG" >> $GITHUB_ENV
 
+    - name: Check if tag exists
+      id: check_tag
+      run: |
+        TAG="${{ env.TAG }}"
+        if [ $(git tag -l "${TAG}") ]; then
+          echo "Tag $TAG already exists, skipping release creation."
+          echo "tag_exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "Tag $TAG does not exist."
+          echo "tag_exists=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Release
+      if: steps.check_tag.outputs.tag_exists == 'false'
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ env.TAG }}
@@ -44,9 +58,10 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
 
     - name: Build and push Docker image to registry
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v4
       with:
         context: .
-        tags: p4lang/p4c:${{ env.VERSION }}
+        push: true
+        tags: rstoyanov/p4c:${{ env.VERSION }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
