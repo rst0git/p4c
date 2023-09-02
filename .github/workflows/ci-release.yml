@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   build:
-    if: ${{ github.repository == 'p4lang/p4c' }}
+    if: ${{ github.repository == 'rst0git/p4c' }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -47,6 +47,7 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         context: .
-        tags: p4lang/p4c:${{ env.VERSION }}
+        push: true
+        tags: rstoyanov/p4c:${{ env.VERSION }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
