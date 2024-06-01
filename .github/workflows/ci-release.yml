@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   build:
-    if: ${{ github.repository == 'p4lang/p4c' }}
+    if: ${{ github.repository == 'rst0git/p4c' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
